@@ -7,18 +7,8 @@ import { pool } from "./models/db.js";
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// app.use(express.static(path.join(__dirname, 'public')));
-
-app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true })); // lida com dados de formulário
-
-// define a pasta onde as views estão
-app.set("views", "./views");
-
-app.use("/", login);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
 
 const testDbConnection = async () => {
   try {
@@ -28,8 +18,6 @@ const testDbConnection = async () => {
     console.error("error connecting:", err);
   }
 };
-
-// Chama a função para testar a conexão
 testDbConnection();
 
 app.listen(PORT, () => {
