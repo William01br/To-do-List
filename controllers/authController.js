@@ -1,20 +1,19 @@
 import bcrypt from "bcrypt";
 import jwt from "jwt";
-import { pool } from "../models/db.js";
+import { pool, insertUser } from "../models/db.js";
+const SECRET_KEY = process.env.SECRET_KEY;
 
-// app.post("/api/register", (req, res) => {
-//   const { name, email, password } = req.body;
+// registra novo usuário
+const register = async (req, res) => {
+  const { username, email, password } = req.body;
 
-//   pool.query(
-//     "INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
-//     [name, email, password],
-//     (err, result) => {
-//       if (err) {
-//         console.error("Error inserting user:", err);
-//         return res.status(500).send("Error inserting user");
-//       }
-//       console.log("User inserted successfully:", result.rows);
-//       return res.status(201).send("User registered successfully");
-//     }
-//   );
-// });
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // dá pra colocar o trecho em Models
+    const result = await insertUser(username, email, hashedPassword);
+
+    res.status(201).json({ message: "user successfully added" });
+  } catch (err) {
+    res.status(500).json({ message: "Error registering user" });
+  }
+};

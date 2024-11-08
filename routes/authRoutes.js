@@ -3,8 +3,8 @@ const router = express.Router();
 
 router.post("/register");
 
-router.post("/login");
+// router.post("/login");
 
-router.delete("/remove");
+// router.delete("/remove");
 
 export default router;

@@ -11,4 +11,9 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-export { pool };
+const insertUser = pool.query(
+  "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
+  [username, email, password]
+);
+
+export { pool, insertUser };
