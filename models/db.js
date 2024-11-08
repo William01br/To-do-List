@@ -22,4 +22,20 @@ function selectEmailUser(email) {
   return pool.query("SELECT * FROM users WHERE email = $1", [email]);
 }
 
-export { pool, insertUser, selectEmailUser };
+async function deleteUserData(id) {
+  const queryUser = "DELETE FROM users WHERE id = $1";
+
+  try {
+    await pool.query("BEGIN");
+
+    await pool.query(queryUser, [id]);
+
+    await pool.query("COMMIT");
+    return { sucess: true };
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    throw err;
+  }
+}
+
+export { pool, insertUser, selectEmailUser, deleteUserData };

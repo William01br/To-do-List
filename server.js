@@ -1,6 +1,7 @@
 import express from "express";
 import { pool } from "./models/db.js";
 import authRouters from "./routes/authRoutes.js";
+import taskRouters from "./routes/taskRoutes.js";
 import { notFound } from "./middleware/notFound.js";
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -9,6 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRouters);
+
+app.use("/api", taskRouters);
 
 app.use(notFound);
 
