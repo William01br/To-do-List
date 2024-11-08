@@ -11,9 +11,15 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-const insertUser = pool.query(
-  "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-  [username, email, password]
-);
+function insertUser(username, email, password) {
+  return pool.query(
+    "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
+    [username, email, password]
+  );
+}
 
-export { pool, insertUser };
+function selectEmailUser(email) {
+  return pool.query("SELECT * FROM users WHERE email = $1", [email]);
+}
+
+export { pool, insertUser, selectEmailUser };
