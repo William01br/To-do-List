@@ -55,4 +55,41 @@ async function insertTask(user_id, title, description, due_date) {
   }
 }
 
-export { pool, insertUser, selectEmailUser, deleteUserData, insertTask };
+async function updateTaskData(setClause, values, index) {
+  console.log(setClause);
+  console.log(values);
+  // const queryTask =
+  //   "UPDATE tasks SET title = $1, description = $2, due_date = $3 WHERE user_id = $4 AND id = $5";
+  const queryTask = `UPDATE tasks SET ${setClause.join(
+    ", "
+  )} WHERE user_id = $${index} AND id = $${index + 1} RETURNING *;`;
+
+  try {
+    await pool.query("BEGIN");
+
+    // await pool.query(queryTask, [
+    //   title,
+    //   description,
+    //   due_date,
+    //   user_id,
+    //   taskId,
+    // ]);
+
+    await pool.query(queryTask, values);
+
+    await pool.query("COMMIT");
+    return { sucess: true };
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    throw err;
+  }
+}
+
+export {
+  pool,
+  insertUser,
+  selectEmailUser,
+  deleteUserData,
+  insertTask,
+  updateTaskData,
+};

@@ -1,4 +1,4 @@
-import { pool, insertTask } from "../models/db.js";
+import { pool, insertTask, updateTaskData } from "../models/db.js";
 
 const showAllTasks = async (req, res) => {
   const user_id = parseInt(req.user.userId);
@@ -35,4 +35,42 @@ const createTask = async (req, res) => {
   }
 };
 
-export { showAllTasks, createTask };
+const updateTask = async (req, res) => {
+  const updates = req.body;
+  const taskId = parseInt(req.params.id);
+  const user_id = parseInt(req.user.userId);
+
+  // query + placeholders
+  let setClause = [];
+  // valores para o placeholder
+  let values = [];
+  let index = 1;
+
+  for (let key in updates) {
+    if (updates.hasOwnProperty(key)) {
+      setClause.push(`${key} = $${index}`);
+      values.push(updates[key]);
+      index++;
+    }
+  }
+
+  if (setClause.length === 0) {
+    return res.status(400).json({ message: "No updates provided" });
+  }
+
+  values.push(user_id, taskId);
+
+  try {
+    const result = await updateTaskData(setClause, values, index);
+
+    if (!result)
+      return res.status(500).json({ message: "Task wasn't possible update" });
+    return res.status(200).json({ message: "Task successfully updated" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "intern error of server", error: err.message });
+  }
+};
+
+export { showAllTasks, createTask, updateTask };
