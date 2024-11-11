@@ -6,6 +6,8 @@ import { notFound } from "./middleware/notFound.js";
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+app.set("json spaces", 2);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -28,3 +30,7 @@ testDbConnection();
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// "username": "will"
+// "email": "william02@gmail.com",
+// "password": "willa02"

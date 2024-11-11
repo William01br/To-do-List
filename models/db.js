@@ -55,29 +55,4 @@ async function insertTask(user_id, title, description, due_date) {
   }
 }
 
-async function showTasks(user_id) {
-  const queryTasks = await pool.query(
-    "SELECT title, description, due_date FROM tasks WHERE user_id = $1"
-  );
-
-  try {
-    await pool.query("BEGIN");
-
-    await pool.query(queryTasks, [user_id]);
-
-    await pool.query("COMMIT");
-    return { sucess: true };
-  } catch (err) {
-    await pool.query("ROLLBACK");
-    throw err;
-  }
-}
-
-export {
-  pool,
-  insertUser,
-  selectEmailUser,
-  deleteUserData,
-  insertTask,
-  showTasks,
-};
+export { pool, insertUser, selectEmailUser, deleteUserData, insertTask };
