@@ -11,15 +11,21 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-function insertUser(username, email, password) {
-  return pool.query(
-    "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-    [username, email, password]
-  );
-}
+async function insertUser(username, email, password) {
+  const queryUser =
+    "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *";
 
-function selectEmailUser(email) {
-  return pool.query("SELECT * FROM users WHERE email = $1", [email]);
+  try {
+    await pool.query("BEGIN");
+
+    await pool.query(queryUser, [username, email, password]);
+
+    await pool.query("COMMIT");
+    return { sucess: true };
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    throw err;
+  }
 }
 
 async function deleteUserData(id) {
@@ -58,22 +64,12 @@ async function insertTask(user_id, title, description, due_date) {
 async function updateTaskData(setClause, values, index) {
   console.log(setClause);
   console.log(values);
-  // const queryTask =
-  //   "UPDATE tasks SET title = $1, description = $2, due_date = $3 WHERE user_id = $4 AND id = $5";
   const queryTask = `UPDATE tasks SET ${setClause.join(
     ", "
   )} WHERE user_id = $${index} AND id = $${index + 1} RETURNING *;`;
 
   try {
     await pool.query("BEGIN");
-
-    // await pool.query(queryTask, [
-    //   title,
-    //   description,
-    //   due_date,
-    //   user_id,
-    //   taskId,
-    // ]);
 
     await pool.query(queryTask, values);
 
@@ -85,11 +81,29 @@ async function updateTaskData(setClause, values, index) {
   }
 }
 
+async function deleteTaskData(taskId, user_id) {
+  const queryTask = "DELETE FROM tasks WHERE id = $1 AND user_id = $2";
+
+  try {
+    await pool.query("BEGIN");
+
+    const queryDelete = await pool.query(queryTask, [taskId, user_id]);
+    const numberRowsDeleted = queryDelete.rowCount;
+    console.log(numberRowsDeleted);
+
+    await pool.query("COMMIT");
+    return numberRowsDeleted;
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    throw err;
+  }
+}
+
 export {
   pool,
   insertUser,
-  selectEmailUser,
   deleteUserData,
   insertTask,
   updateTaskData,
+  deleteTaskData,
 };

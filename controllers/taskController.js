@@ -1,11 +1,16 @@
-import { pool, insertTask, updateTaskData } from "../models/db.js";
+import {
+  pool,
+  insertTask,
+  updateTaskData,
+  deleteTaskData,
+} from "../models/db.js";
 
 const showAllTasks = async (req, res) => {
   const user_id = parseInt(req.user.userId);
 
   try {
     const result = await pool.query(
-      "SELECT title, description, due_date FROM tasks WHERE user_id = $1",
+      "SELECT id, title, description, due_date FROM tasks WHERE user_id = $1",
       [user_id]
     );
     return res.status(200).json(result.rows);
@@ -73,4 +78,22 @@ const updateTask = async (req, res) => {
   }
 };
 
-export { showAllTasks, createTask, updateTask };
+const deleteTask = async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const user_id = parseInt(req.user.userId);
+  console.log(taskId, user_id);
+
+  try {
+    const result = await deleteTaskData(taskId, user_id);
+
+    if (result === 0)
+      return res.status(500).json({ message: "Task wasn't found" });
+    return res.status(200).json({ message: "Task successfully deleted" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "intern error of server", error: err.message });
+  }
+};
+
+export { showAllTasks, createTask, updateTask, deleteTask };

@@ -1,11 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import {
-  pool,
-  insertUser,
-  selectEmailUser,
-  deleteUserData,
-} from "../models/db.js";
+import { pool, insertUser, deleteUserData } from "../models/db.js";
 const SECRET_KEY = process.env.SECRET_KEY;
 
 // registra novo usuário
@@ -16,7 +11,9 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await insertUser(username, email, hashedPassword);
 
-    res.status(201).json({ message: "user successfully added" });
+    if (!result)
+      return res.status(500).json({ message: "Error inserting user" });
+    return res.status(201).json({ message: "user successfully added" });
   } catch (err) {
     res
       .status(500)
@@ -29,7 +26,9 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const result = await selectEmailUser(email);
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
     const user = result.rows[0];
 
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
@@ -41,7 +40,6 @@ const login = async (req, res) => {
     const token = jwt.sign({ userId: user.id }, SECRET_KEY, {
       expiresIn: "1h",
     });
-    // res.json({ message: "Login successful" });
     res.json({ token: token, message: "Login successful" });
   } catch (err) {
     res.status(500).json({ message: "Error logging in user" });
