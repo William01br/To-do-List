@@ -38,4 +38,46 @@ async function deleteUserData(id) {
   }
 }
 
-export { pool, insertUser, selectEmailUser, deleteUserData };
+async function insertTask(user_id, title, description, due_date) {
+  const queryTask =
+    "INSERT INTO tasks (user_id, title, description, due_date) VALUES ($1, $2, $3, $4) RETURNING *";
+
+  try {
+    await pool.query("BEGIN");
+
+    await pool.query(queryTask, [user_id, title, description, due_date]);
+
+    await pool.query("COMMIT");
+    return { sucess: true };
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    throw err;
+  }
+}
+
+async function showTasks(user_id) {
+  const queryTasks = await pool.query(
+    "SELECT title, description, due_date FROM tasks WHERE user_id = $1"
+  );
+
+  try {
+    await pool.query("BEGIN");
+
+    await pool.query(queryTasks, [user_id]);
+
+    await pool.query("COMMIT");
+    return { sucess: true };
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    throw err;
+  }
+}
+
+export {
+  pool,
+  insertUser,
+  selectEmailUser,
+  deleteUserData,
+  insertTask,
+  showTasks,
+};

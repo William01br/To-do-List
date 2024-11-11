@@ -18,7 +18,9 @@ const register = async (req, res) => {
 
     res.status(201).json({ message: "user successfully added" });
   } catch (err) {
-    res.status(500).json({ message: "Error registering user" });
+    res
+      .status(500)
+      .json({ error: err.message, message: "Error registering user" });
   }
 };
 
@@ -40,7 +42,7 @@ const login = async (req, res) => {
       expiresIn: "1h",
     });
     // res.json({ message: "Login successful" });
-    res.json({ token: token });
+    res.json({ token: token, message: "Login successful" });
   } catch (err) {
     res.status(500).json({ message: "Error logging in user" });
   }
@@ -55,7 +57,7 @@ const remove = async (req, res) => {
 
     if (!result)
       return res.status(500).json({ message: "error while deleting of datas" });
-    return res.status(200).json({ message: "User data deleted successfully" });
+    return res.status(204).json({ message: "User data deleted successfully" });
   } catch (err) {
     res
       .status(500)
