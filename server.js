@@ -1,8 +1,8 @@
 import express from "express";
-import { pool } from "./models/db.js";
-import authRouters from "./routes/authRoutes.js";
-import taskRouters from "./routes/taskRoutes.js";
-import { notFound } from "./middleware/notFound.js";
+import { pool } from "./src/models/db.js";
+import authRouters from "./src/routes/authRoutes.js";
+import taskRouters from "./src/routes/taskRoutes.js";
+import { notFound } from "./src/middleware/notFound.js";
 const PORT = process.env.PORT || 3000;
 const app = express();
 
