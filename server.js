@@ -30,7 +30,3 @@ testDbConnection();
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-// "username": "will"
-// "email": "william02@gmail.com",
-// "password": "willa02"

@@ -9,10 +9,9 @@ const showAllTasks = async (req, res) => {
   const user_id = parseInt(req.user.userId);
 
   try {
-    const result = await pool.query(
-      "SELECT id, title, description, due_date FROM tasks WHERE user_id = $1",
-      [user_id]
-    );
+    const result = await pool.query("SELECT * FROM tasks WHERE user_id = $1", [
+      user_id,
+    ]);
     return res.status(200).json(result.rows);
   } catch (err) {
     res
