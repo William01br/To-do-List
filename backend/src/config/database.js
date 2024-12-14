@@ -1,4 +1,4 @@
-import { Sequelize } from "sequelize";
+import Sequelize from "sequelize";
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -7,14 +7,14 @@ const sequelize = new Sequelize(
   {
     host: "db",
     dialect: "postgres",
-    loggin: false,
+    logging: false,
   }
 );
 
 const testDbConnection = async () => {
   try {
     await sequelize.authenticate();
-    console.log("connection successful");
+    console.log("connection successful with DB");
   } catch (err) {
     console.error("error connecting:", err);
   }
