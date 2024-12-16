@@ -14,7 +14,7 @@ services:
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=my_database
+      - DB_NAME=dbTest
     depends_on:
       - db
     networks:
@@ -26,7 +26,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: my_database
+      POSTGRES_DB: dbTest
     ports:
       - "5432:5432"
     volumes:
