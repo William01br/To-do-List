@@ -1,27 +1,21 @@
-import Sequelize from "sequelize";
+import pg from "pg";
+const { Pool, Client } = pg;
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: "postgres",
-    logging: console.log,
-    define: {
-      timestamps: true,
-    },
-  }
-);
+const pool = new Pool({
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+});
 
 const testDbConnection = async () => {
   try {
-    await sequelize.authenticate();
+    await pool.query("SELECT NOW()");
     console.log("connection successful with DB");
   } catch (err) {
     console.error("error connecting:", err);
   }
 };
 
-export { sequelize, testDbConnection };
+export { pool, testDbConnection };

@@ -1,22 +1,22 @@
-import { DataTypes } from "sequelize";
-import { sequelize } from "../config/database.js";
-import User from "./User.js";
+// import { DataTypes } from "sequelize";
+// import { sequelize } from "../config/database.js";
+// import User from "./User.js";
 
-const List = sequelize.define("List", {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-});
+// const List = sequelize.define("list", {
+//   id: {
+//     type: DataTypes.INTEGER,
+//     autoIncrement: true,
+//     primaryKey: true,
+//   },
+//   name: {
+//     type: DataTypes.STRING,
+//     allowNull: false,
+//   },
+// });
 
-List.belongsTo(User);
-User.hasMany(List, {
-  onDelete: "CASCADE",
-});
+// List.belongsTo(User);
+// User.hasMany(List, {
+//   onDelete: "CASCADE",
+// });
 
-export default List;
+// export default List;
