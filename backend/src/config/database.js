@@ -1,5 +1,5 @@
 import pg from "pg";
-const { Pool, Client } = pg;
+const { Pool } = pg;
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -18,4 +18,17 @@ const testDbConnection = async () => {
   }
 };
 
-export { pool, testDbConnection };
+const execute = async (query) => {
+  try {
+    await pool.connect();
+    await pool.query(query);
+    return true;
+  } catch (err) {
+    console.error(err.stack);
+    return false;
+  } finally {
+    await pool.end();
+  }
+};
+
+export { pool, testDbConnection, execute };

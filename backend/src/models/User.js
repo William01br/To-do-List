@@ -1,34 +1,17 @@
-// import { DataTypes } from "sequelize";
-// import { sequelize } from "../config/database.js";
+import { execute } from "../config/database.js";
 
-// const User = sequelize.define("user", {
-//   id: {
-//     type: DataTypes.INTEGER,
-//     autoIncrement: true,
-//     primaryKey: true,
-//   },
-//   name: {
-//     type: DataTypes.STRING,
-//     allowNull: false,
-//   },
-//   username: {
-//     type: DataTypes.STRING,
-//     allowNull: false,
-//     unique: true,
-//   },
-//   email: {
-//     type: DataTypes.STRING,
-//     allowNull: false,
-//     unique: true,
-//   },
-//   password: {
-//     type: DataTypes.STRING,
-//     allowNull: false,
-//   },
-//   avatar: {
-//     type: DataTypes.STRING,
-//     allowNull: false,
-//   },
-// });
+const user = `CREATE TABLE IF NOT EXISTS "users" (
+"id" INTEGER PRIMARY KEY AUTOINCREMENT,
+"name" VARCHAR(100) NOT NULL,
+"username" VARCHAR(100) NOT NULL UNIQUE,
+"email" VARCHAR(100) NOT NULL UNIQUE,
+"password" VARCHAR(255) NOT NULL,
+"avatar" TEXT NOT NULL)`;
 
-// export default User;
+execute(user).then((result) => {
+  if (!result) {
+    console.log("Table 'users' wasn't created");
+  }
+});
+
+export default user;
