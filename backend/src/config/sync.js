@@ -1,17 +1,21 @@
-// import { sequelize } from "./database.js";
+import { pool } from "./database.js";
+import user from "../models/user.js";
+import list from "../models/list.js";
+import task from "../models/task.js";
 
-// import User from "../models/User.js";
-// import List from "../models/List.js";
-// import Task from "../models/Task.js";
-// import Comment from "../models/Comment.js";
+const execute = async () => {
+  try {
+    await pool.connect();
+    await pool.query(user);
+    await pool.query(list);
+    await pool.query(task);
+    return true;
+  } catch (err) {
+    console.error(err.stack);
+    return false;
+  } finally {
+    await pool.end();
+  }
+};
 
-// const syncDB = async () => {
-//   try {
-//     await sequelize.sync({ alter: true });
-//     console.log("syncronization successful with DB");
-//   } catch (err) {
-//     console.error("error syncing:", err);
-//   }
-// };
-
-// export default syncDB;
+export default execute;

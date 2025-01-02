@@ -1,5 +1,3 @@
-import { execute } from "../config/database.js";
-
 const task = `CREATE TABLE IF NOT EXISTS "tasks" (
 id SERIAL PRIMARY KEY,
 name VARCHAR(100) NOT NULL,
@@ -8,12 +6,6 @@ endDate TIMESTAMP DEFAULT NULL,
 comment TEXT DEFAULT NULL,
 createdAt TIMESTAMP DEFAULT NOW(),
 listId INTEGER NOT NULL,
-FOREIGN KEY (listId) REFERENCES lists(id) ON DELETE CASCADE ON UPDATE CASCADE)`;
-
-execute(task).then((result) => {
-  if (!result) {
-    console.log("Table 'tasks' wasn't created");
-  }
-});
+FOREIGN KEY (listId) REFERENCES lists(id) ON DELETE CASCADE)`;
 
 export default task;

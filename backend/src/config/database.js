@@ -1,5 +1,6 @@
 import pg from "pg";
 const { Pool } = pg;
+import execute from "./sync.js";
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -18,17 +19,7 @@ const testDbConnection = async () => {
   }
 };
 
-const execute = async (query) => {
-  try {
-    await pool.connect();
-    await pool.query(query);
-    return true;
-  } catch (err) {
-    console.error(err.stack);
-    return false;
-  } finally {
-    await pool.end();
-  }
-};
+// call this function for to create the tables.
+// execute();
 
-export { pool, testDbConnection, execute };
+export { pool, testDbConnection };
