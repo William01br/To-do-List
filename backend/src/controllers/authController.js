@@ -1,66 +1,20 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { pool, insertUser, deleteUserData } from "../models/db.js";
-const SECRET_KEY = process.env.SECRET_KEY;
+import authService from "../services/authService.js";
 
-// registra novo usuário
-const register = async (req, res) => {
-  const { username, email, password } = req.body;
-
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await insertUser(username, email, hashedPassword);
-
-    if (!result)
-      return res.status(500).json({ message: "Error inserting user" });
-    return res.status(201).json({ message: "user successfully added" });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: err.message, message: "Error registering user" });
-  }
-};
-
-// login de usuário
 const login = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password)
+    return res.status(400).json({ message: "email and password are required" });
+
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
-    const user = result.rows[0];
-
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch)
-      return res.status(401).json({ message: "Invalid credentials" });
-
-    const token = jwt.sign({ userId: user.id }, SECRET_KEY, {
-      expiresIn: "1h",
-    });
-    res.json({ token: token, message: "Login successful" });
-  } catch (err) {
-    res.status(500).json({ message: "Error logging in user" });
-  }
-};
-
-// remove usuário logado
-const remove = async (req, res) => {
-  try {
-    const id = parseInt(req.user.userId);
-
-    const result = await deleteUserData(id);
+    const result = await authService.login(email, password);
 
     if (!result)
-      return res.status(500).json({ message: "error while deleting of datas" });
-    return res.status(204).json({ message: "User data deleted successfully" });
+      return res.status(401).json({ message: "Invalid credentials" });
+    return res.status(200).json({ token: result });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Intern error of server", error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
 
-export { register, login, remove };
+export default login;
