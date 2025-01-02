@@ -6,7 +6,8 @@ name VARCHAR(100) NOT NULL,
 username VARCHAR(100) NOT NULL UNIQUE,
 email VARCHAR(100) NOT NULL UNIQUE,
 password VARCHAR(255) NOT NULL,
-avatar TEXT NOT NULL)`;
+avatar TEXT NOT NULL,
+createdAt TIMESTAMP DEFAULT NOW(),)`;
 
 execute(user).then((result) => {
   if (!result) {

@@ -4,6 +4,7 @@ const list = `CREATE TABLE IF NOT EXISTS "lists" (
 id SERIAL PRIMARY KEY ,
 name VARCHAR(100) NOT NULL,
 userId INTEGER NOT NULL,
+createdAt TIMESTAMP DEFAULT NOW(),
 FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE)`;
 
 execute(list).then((result) => {
