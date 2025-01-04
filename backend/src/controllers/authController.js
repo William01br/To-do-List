@@ -29,7 +29,8 @@ const tokenRefresh = async (req, res) => {
     return res.status(401).json({ message: "token refresh is required" });
 
   try {
-    const result = await authService.getTokenRefresh(token);
+    const userId = req.userId;
+    const result = await authService.getTokenRefresh(token, userId);
     if (!result)
       return res.status(500).json({ message: "Internal Server Error" });
     return res.status(200).json({ AcessToken: result });

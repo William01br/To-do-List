@@ -12,7 +12,7 @@ const generateAcessToken = (userId) => {
 
 const generateRefreshToken = (userId) => {
   return jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: "14d",
+    expiresIn: "240s",
   });
 };
 
@@ -21,10 +21,11 @@ const hashRefreshToken = async (refreshToken) => {
 };
 
 const storeRefreshToken = async (userId, hashedRefreshToken) => {
-  const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
+  // const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
+  // teste --> days aqui são segundos!!!
+  const daysToMilliseconds = (days) => days * 1000;
+
   const expiresAt = new Date(Date.now() + daysToMilliseconds(14));
-  console.log(userId, typeof userId);
-  console.log(expiresAt, typeof expiresAt);
 
   try {
     const text =
@@ -41,6 +42,8 @@ const storeRefreshToken = async (userId, hashedRefreshToken) => {
 
 const getTokens = async (userId) => {
   try {
+    await deleteRefreshToken(userId);
+
     const acessToken = generateAcessToken(userId);
 
     const refreshToken = generateRefreshToken(userId);
@@ -78,14 +81,9 @@ const login = async (email, password) => {
   }
 };
 
-const getTokenRefresh = async (providedRefreshToken) => {
-  console.log(providedRefreshToken);
+const getTokenRefresh = async (providedRefreshToken, providedUserId) => {
   try {
-    const decoded = jwt.decode(
-      providedRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
-    const userId = decoded.userId;
+    const userId = providedUserId;
     console.log(userId);
 
     const text =
@@ -94,19 +92,39 @@ const getTokenRefresh = async (providedRefreshToken) => {
 
     const result = await pool.query(text, values);
     if (result.rows[0].lenght === 0 || !result) return null;
-    console.log(result);
 
     const storedToken = result.rows[0].refreshtoken;
-    console.log(storedToken);
 
     const isMatch = await bcrypt.compare(providedRefreshToken, storedToken);
     if (!isMatch) return null;
 
-    return await generateAcessToken(userId);
+    return generateAcessToken(userId);
   } catch (err) {
     console.error("Error refreshing token:", err);
     return null;
   }
 };
 
-export default { login, getTokenRefresh, getTokens };
+// value should be a token (string) or userId (number).
+const deleteRefreshToken = async (value) => {
+  try {
+    let userId;
+    if (typeof value === "number") {
+      userId = value;
+    } else {
+      const decoded = jwt.decode(value, process.env.REFRESH_TOKEN_SECRET);
+      userId = decoded.userId;
+    }
+
+    const text = "DELETE FROM refresh_tokens WHERE userId = $1";
+    const values = [userId];
+
+    const result = await pool.query(text, values);
+    return result.rowCount;
+  } catch (err) {
+    console.error("Error deleting refresh token:", err);
+    throw new Error("refresh token not deleted");
+  }
+};
+
+export default { login, getTokenRefresh, getTokens, deleteRefreshToken };
