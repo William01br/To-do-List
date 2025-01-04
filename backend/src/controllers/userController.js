@@ -19,4 +19,6 @@ const register = async (req, res) => {
   }
 };
 
+const update = async (req, res) => {};
+
 export { register };

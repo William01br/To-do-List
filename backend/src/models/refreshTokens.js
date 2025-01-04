@@ -1,0 +1,10 @@
+const refreshTokens = `CREATE TABLE IF NOT EXISTS "refresh_tokens" (
+id SERIAL PRIMARY KEY,
+userId INTEGER REFERENCES users(id) ON DELETE CASCADE,
+refreshToken TEXT NOT NULL,
+expiresAt TIMESTAMP NOT NULL,
+createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updateAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+revoked BOOLEAN DEFAULT FALSE)`;
+
+export default refreshTokens;
