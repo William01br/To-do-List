@@ -2,14 +2,12 @@ import jwt from "jsonwebtoken";
 import authService from "../services/authService.js";
 
 const verifyExpirationToken = async (req, res, next) => {
+  const { token } = req.body;
   try {
-    const { token } = req.body;
-
     const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
     req.userId = decoded.userId;
     next();
   } catch (err) {
-    const { token } = req.body;
     if (err.name === "TokenExpiredError") {
       const result = await authService.deleteRefreshToken(token);
       return res.status(403).json({

@@ -1,3 +1,8 @@
+/**
+ * auth Controller
+ * Handles all auth-related operations, such login and creation of acess and refresh tokens
+ */
+
 import authService from "../services/authService.js";
 
 const login = async (req, res) => {
@@ -24,13 +29,15 @@ const login = async (req, res) => {
 };
 
 const tokenRefresh = async (req, res) => {
-  const { token } = req.body;
-  if (!token)
+  const { refreshToken } = req.body;
+
+  if (!refreshToken)
     return res.status(401).json({ message: "token refresh is required" });
 
   try {
     const userId = req.userId;
-    const result = await authService.getTokenRefresh(token, userId);
+
+    const result = await authService.getTokenRefresh(refreshToken, userId);
     if (!result)
       return res.status(500).json({ message: "Internal Server Error" });
     return res.status(200).json({ AcessToken: result });

@@ -1,3 +1,8 @@
+/**
+ * auth Service
+ * Resolve all deeps operations of the auth Controller, such as generating tokens, interacting with database and encripting the data.
+ */
+
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/database.js";
@@ -6,13 +11,13 @@ dotenv.config();
 
 const generateAcessToken = (userId) => {
   return jwt.sign({ userId }, process.env.ACESS_TOKEN_SECRET, {
-    expiresIn: "60s",
+    expiresIn: "12h",
   });
 };
 
 const generateRefreshToken = (userId) => {
   return jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: "240s",
+    expiresIn: "7d",
   });
 };
 
@@ -21,11 +26,8 @@ const hashRefreshToken = async (refreshToken) => {
 };
 
 const storeRefreshToken = async (userId, hashedRefreshToken) => {
-  // const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
-  // teste --> days aqui são segundos!!!
-  const daysToMilliseconds = (days) => days * 1000;
-
-  const expiresAt = new Date(Date.now() + daysToMilliseconds(14));
+  const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
+  const expiresAt = new Date(Date.now() + daysToMilliseconds(7));
 
   try {
     const text =
@@ -40,6 +42,7 @@ const storeRefreshToken = async (userId, hashedRefreshToken) => {
   }
 };
 
+// Creates a new refresh (RF) and acess token and storage the RF. Therefore, deletes the old RF.
 const getTokens = async (userId) => {
   try {
     await deleteRefreshToken(userId);
@@ -81,6 +84,7 @@ const login = async (email, password) => {
   }
 };
 
+// Receive a refresh token and creates a new acess token.
 const getTokenRefresh = async (providedRefreshToken, providedUserId) => {
   try {
     const userId = providedUserId;
@@ -127,4 +131,9 @@ const deleteRefreshToken = async (value) => {
   }
 };
 
-export default { login, getTokenRefresh, getTokens, deleteRefreshToken };
+export default {
+  login,
+  getTokenRefresh,
+  getTokens,
+  deleteRefreshToken,
+};

@@ -1,3 +1,8 @@
+/**
+ * user Controller
+ * Handles all user-related operations, such register, update and delete data.
+ */
+
 import userService from "../services/userService.js";
 
 const register = async (req, res) => {

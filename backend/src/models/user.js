@@ -3,7 +3,9 @@ id SERIAL PRIMARY KEY,
 name VARCHAR(100) NOT NULL,
 username VARCHAR(100) NOT NULL UNIQUE,
 email VARCHAR(100) NOT NULL UNIQUE,
-password TEXT NOT NULL,
+password TEXT,
+oauthProvider VARCHAR(255),
+ouathId TEXT,
 avatar TEXT NOT NULL,
 createdAt TIMESTAMP DEFAULT NOW())`;
 
