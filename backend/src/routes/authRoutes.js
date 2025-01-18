@@ -1,7 +1,7 @@
 import express from "express";
 import passport from "passport";
 
-import { login, tokenRefresh } from "../controllers/authController.js";
+import { login, getTokenRefresh } from "../controllers/authController.js";
 import authenticateToken from "../middleware/authMiddleware.js";
 import verifyExpirationToken from "../middleware/tokenRefreshMiddleware.js";
 
@@ -26,7 +26,7 @@ router.get(
 
 router.post("/login", login);
 
-router.post("/refresh-token", verifyExpirationToken, tokenRefresh);
+router.post("/refresh-token", verifyExpirationToken, getTokenRefresh);
 
 router.get("/protected", authenticateToken, (req, res) => {
   res.send("Hello from protected route!");

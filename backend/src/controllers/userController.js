@@ -26,4 +26,31 @@ const register = async (req, res) => {
 
 const update = async (req, res) => {};
 
-export { register };
+const uploadImage = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "File required" });
+    console.log(req.file);
+    console.log(req.file.buffer);
+
+    const fileData = req.file;
+    const userId = req.userId;
+
+    // Upload file to cloudinary and return the url of the uploaded file.
+    const result = await userService.uploadToCloudinary(fileData);
+    console.log(result);
+    if (!result)
+      return res.status(500).json({ message: "Internal Server Error" });
+
+    const resultDB = await userService.updateAvatar(result, userId);
+    if (!resultDB)
+      return res.status(500).json({ message: "Internal Server Error" });
+
+    return res
+      .status(200)
+      .json({ message: "avatar updated sucessfully", url: result });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export { register, uploadImage };

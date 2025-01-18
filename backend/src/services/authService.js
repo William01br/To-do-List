@@ -58,7 +58,7 @@ const getTokens = async (userId) => {
       hashedRefreshToken
     );
 
-    return { refreshToken: refreshToken, acessToken: acessToken };
+    return { acessToken: acessToken, refreshToken: refreshToken };
   } catch (err) {
     console.error("Error creating tokens:", err);
     throw new Error("Failed to create tokens");

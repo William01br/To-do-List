@@ -28,11 +28,12 @@ const login = async (req, res) => {
   }
 };
 
-const tokenRefresh = async (req, res) => {
+// generates acess token from refresh token
+const getTokenRefresh = async (req, res) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken)
-    return res.status(401).json({ message: "token refresh is required" });
+    return res.status(401).json({ message: "refresh token is required" });
 
   try {
     const userId = req.userId;
@@ -46,4 +47,4 @@ const tokenRefresh = async (req, res) => {
   }
 };
 
-export { login, tokenRefresh };
+export { login, getTokenRefresh };

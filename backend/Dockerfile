@@ -6,9 +6,9 @@ COPY package*.json ./
 
 RUN npm install
 
-RUN npm install -g nodemon
+RUN npm install -g nodemon 
 
-COPY . .
+COPY src /app/src/
 
 EXPOSE 3000
 
