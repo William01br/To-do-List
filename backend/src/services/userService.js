@@ -5,6 +5,7 @@
 
 import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
+import jwt from "jsonwebtoken";
 
 import { pool } from "../config/database.js";
 import { createUsername } from "../utils/createUsername.js";
@@ -89,6 +90,8 @@ const uploadToCloudinary = async (fileData) => {
     const readableStream = bufferToStream(fileData.buffer);
 
     const result = await uploadFileToCloudinary(readableStream);
+
+    // otimizes the imagem
     const url = cloudinary.url(result.secure_url, {
       transformation: [
         {
@@ -127,10 +130,52 @@ const updateAvatar = async (url, userId) => {
   }
 };
 
+const verifyPassword = async (userId, password) => {
+  try {
+    const text = "SELECT * FROM users WHERE id = $1";
+    const value = [userId];
+    const result = await pool.query(text, value);
+    const hashPassword = result.rows[0].password;
+
+    const matchPassword = await bcrypt.compare(password, hashPassword);
+    if (!matchPassword) return null;
+
+    const temporaryToken = jwt.sign(
+      { userId },
+      process.env.TEMPORARY_VERIFICATION_TOKEN,
+      { expiresIn: "25m" }
+    );
+    return temporaryToken;
+  } catch (err) {
+    console.error("Error verifying password:", err);
+    throw new Error("Error verifying password");
+  }
+};
+
+const updatePassword = async (userId, password) => {
+  try {
+    console.log(password);
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const text = "UPDATE users SET password = $1 WHERE id = $2";
+    const values = [hashedPassword, userId];
+
+    const result = pool.query(text, values);
+    if (result.rowCount === 0) return null;
+
+    return true;
+  } catch (err) {
+    console.error("Error updating password:", err);
+    throw new Error("Error updating password");
+  }
+};
+
 export default {
   register,
   findUserByOauthId,
   registerByOAuth,
   uploadToCloudinary,
   updateAvatar,
+  verifyPassword,
+  updatePassword,
 };

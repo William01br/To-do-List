@@ -24,8 +24,6 @@ const register = async (req, res) => {
   }
 };
 
-const update = async (req, res) => {};
-
 const uploadImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "File required" });
@@ -41,6 +39,7 @@ const uploadImage = async (req, res) => {
     if (!result)
       return res.status(500).json({ message: "Internal Server Error" });
 
+    // Update the avatar in the database with the new url.
     const resultDB = await userService.updateAvatar(result, userId);
     if (!resultDB)
       return res.status(500).json({ message: "Internal Server Error" });
@@ -53,4 +52,41 @@ const uploadImage = async (req, res) => {
   }
 };
 
-export { register, uploadImage };
+const verifyPassword = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { password } = req.body;
+
+    if (!password)
+      return res.status(400).json({ message: "Password required" });
+
+    const result = await userService.verifyPassword(userId, password);
+    if (!result) return res.status(400).json({ message: "Wrong password" });
+
+    return res
+      .status(200)
+      .json({ message: "Verified Password", temporaryToken: result });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { newPassword } = req.body;
+
+    if (!newPassword)
+      return res.status(400).json({ message: "Password required" });
+
+    const result = await userService.updatePassword(userId, newPassword);
+    if (!result)
+      return res.status(500).json({ message: "Internal Server Error" });
+
+    return res.status(200).json({ message: "updated password sucessfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export { register, uploadImage, verifyPassword, updatePassword };

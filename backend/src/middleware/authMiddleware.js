@@ -1,3 +1,8 @@
+/**
+ * Middleware for verify and auth users for acess protect routes.
+ * Furthermore, verify and auth the token for change the password, too.
+ */
+
 import jwt from "jsonwebtoken";
 
 const authenticateToken = (req, res, next) => {
@@ -9,7 +14,13 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.ACESS_TOKEN_SECRET);
+    // verifiy if the token is temporary or acess.
+    let decoded;
+    if (req.temporarySession) {
+      decoded = jwt.verify(token, process.env.TEMPORARY_VERIFICATION_TOKEN);
+    } else {
+      decoded = jwt.verify(token, process.env.ACESS_TOKEN_SECRET);
+    }
 
     if (!decoded)
       return res.status(403).json({ message: "Forbidden: token invalid" });
