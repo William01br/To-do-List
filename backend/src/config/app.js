@@ -4,6 +4,7 @@ import session from "express-session";
 
 import userRoutes from "../routes/userRoutes.js";
 import authRoutes from "../routes/authRoutes.js";
+import listRoutes from "../routes/listRoutes.js";
 import { notFound } from "../middleware/notFound.js";
 import errorHandler from "../middleware/errorMiddleware.js";
 
@@ -29,9 +30,7 @@ app.use("/user", userRoutes);
 
 app.use("/auth", authRoutes);
 
-app.get("/", (req, res) => {
-  res.send("Hello, Dude!");
-});
+app.use("/lists", listRoutes);
 
 app.use(errorHandler);
 

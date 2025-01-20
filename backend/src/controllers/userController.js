@@ -106,7 +106,7 @@ const updatePassword = async (req, res) => {
 const getUserDataById = async (req, res) => {
   try {
     const userId = req.userId;
-    const result = await userService.getUserDataById(userId);
+    const result = await userService.getAllDataUserByUserId(userId);
     if (!result)
       return res.status(500).json({ message: "Internal Server Error" });
 
