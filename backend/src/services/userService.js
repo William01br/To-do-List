@@ -8,11 +8,10 @@ import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
 
 import { pool } from "../config/database.js";
-import { createUsername } from "../utils/createUsername.js";
 import { bufferToStream } from "../utils/bufferToStream.js";
 import "../config/cloudinary.js";
 
-const register = async (name, username, email, password) => {
+const register = async (username, email, password) => {
   try {
     const avatarUrl =
       "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
@@ -21,8 +20,8 @@ const register = async (name, username, email, password) => {
     console.log(passwordHashed);
 
     const text =
-      "INSERT INTO users(name, username, email, password, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, username, email, avatar, createdAt";
-    const values = [name, username, email, passwordHashed, avatarUrl];
+      "INSERT INTO users(username, email, password, avatar) VALUES ($1, $2, $3, $4) RETURNING id, username, email, avatar, created_at";
+    const values = [username, email, passwordHashed, avatarUrl];
 
     const result = await pool.query(text, values);
     console.log(result.rows[0]);
@@ -37,7 +36,7 @@ const register = async (name, username, email, password) => {
 
 const findUserByOauthId = async (oauthId) => {
   try {
-    const text = "SELECT * FROM users WHERE ouathId = $1";
+    const text = "SELECT * FROM users WHERE oauth_id = $1";
     const value = [oauthId];
 
     const result = await pool.query(text, value);
@@ -54,10 +53,10 @@ const registerByOAuth = async (data) => {
     const { oauthId, name, email, avatar } = data;
     console.log(data);
     const oauthProvider = "google";
-    const username = createUsername(name);
+    const username = name.split(" ")[0];
     const text =
-      "INSERT INTO users (name, username, email, oauthProvider, ouathId, avatar) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
-    const values = [name, username, email, oauthProvider, oauthId, avatar];
+      "INSERT INTO users (username, email, oauth_provider, oauth_id, avatar) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+    const values = [username, email, oauthProvider, oauthId, avatar];
 
     const result = await pool.query(text, values);
     return result.rows[0];
@@ -170,6 +169,74 @@ const updatePassword = async (userId, password) => {
   }
 };
 
+const getAllDataUserByUserId = async (userId) => {
+  try {
+    const text = `
+    SELECT 
+    u.id AS user_id,
+    u.username,
+    u.email,
+    u.avatar,
+    u.created_at,
+    ARRAY_AGG(
+        JSON_BUILD_OBJECT(
+            'list_id', l.id,
+            'list_name', l.name_list,
+            'list_created_at', l.created_at,
+            'list_is_protected', l.is_protected,
+            'tasks', (
+                SELECT ARRAY_AGG(
+                    JSON_BUILD_OBJECT(
+                        'task_id', t.id,
+                        'task_title', t.name_task,
+                        'task_description', t.comment,
+                        'task_due_date', t.due_date,
+                        'task_finished', t.completed,
+                        'task_created_at', t.created_at
+                    )
+                    ORDER BY t.created_at
+                )
+                FROM tasks t
+                WHERE t.list_id = l.id
+            )
+        )
+        ORDER BY l.created_at
+    ) AS lists
+    FROM
+        users u
+    LEFT JOIN
+        lists l ON u.id = l.user_id
+    WHERE 
+        u.id = $1
+    GROUP BY
+        u.id`;
+    const value = [userId];
+
+    const result = await pool.query(text, value);
+    if (result.rows[0].length === 0) return null;
+
+    return result.rows[0];
+  } catch (err) {
+    console.error("Error getting all data user by userId:", err);
+    throw new Error("Error getting all data user by userId");
+  }
+};
+
+const deleteAccount = async (userId) => {
+  try {
+    const text = "DELETE FROM users WHERE id = $1";
+    const value = [userId];
+
+    const result = await pool.query(text, value);
+    if (result.rowCount === 0) return null;
+
+    return true;
+  } catch (err) {
+    console.error("Error deleting all data user by userId:", err);
+    throw new Error("Error deleting all data user by userId");
+  }
+};
+
 export default {
   register,
   findUserByOauthId,
@@ -178,4 +245,6 @@ export default {
   updateAvatar,
   verifyPassword,
   updatePassword,
+  getAllDataUserByUserId,
+  deleteAccount,
 };

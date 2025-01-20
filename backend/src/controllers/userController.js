@@ -4,21 +4,35 @@
  */
 
 import userService from "../services/userService.js";
+import listService from "../services/listService.js";
 
 const register = async (req, res) => {
-  const { name, username, email, password } = req.credentials;
+  const { username, email, password } = req.credentials;
 
   try {
-    const result = await userService.register(name, username, email, password);
+    const result = await userService.register(username, email, password);
 
     if (result === 23505)
-      return res
-        .status(400)
-        .json({ message: "username or email alredy registered" });
+      return res.status(409).json({
+        error: "Conflict",
+        message:
+          "The email address is already registered. Please use a different email.",
+      });
     if (!result) {
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res
+        .status(500)
+        .json({ message: "Internal Server Error at registering User" });
     }
-    return res.status(200).json(result);
+
+    const resultListDefault = await listService.createListDefault(result.id);
+    if (!resultListDefault)
+      return res
+        .status(500)
+        .json({ message: "Internal Server Error at creating default List" });
+
+    const userData = await userService.getAllDataUserByUserId(result.id);
+
+    return res.status(200).json(userData);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -89,4 +103,40 @@ const updatePassword = async (req, res) => {
   }
 };
 
-export { register, uploadImage, verifyPassword, updatePassword };
+const getUserDataById = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const result = await userService.getUserDataById(userId);
+    if (!result)
+      return res.status(500).json({ message: "Internal Server Error" });
+
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await userService.deleteAccount(userId);
+    if (!result)
+      return res
+        .status(500)
+        .json({ message: "User not deleted", error: "Internal Server Error" });
+
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export {
+  register,
+  uploadImage,
+  verifyPassword,
+  updatePassword,
+  getUserDataById,
+  deleteAccount,
+};

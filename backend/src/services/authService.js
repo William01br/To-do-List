@@ -28,11 +28,12 @@ const hashRefreshToken = async (refreshToken) => {
 const storeRefreshToken = async (userId, hashedRefreshToken) => {
   const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
   const expiresAt = new Date(Date.now() + daysToMilliseconds(7));
+  const updatedAt = new Date(Date.now());
 
   try {
     const text =
-      "INSERT INTO refresh_tokens (userId, refreshToken, expiresAt) VALUES ($1, $2, $3) RETURNING id";
-    const values = [userId, hashedRefreshToken, expiresAt];
+      "INSERT INTO refresh_tokens (user_id, refresh_token, expires_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id";
+    const values = [userId, hashedRefreshToken, expiresAt, updatedAt];
 
     const result = await pool.query(text, values);
     return result.rows[0];
@@ -91,7 +92,7 @@ const getTokenRefresh = async (providedRefreshToken, providedUserId) => {
     console.log(userId);
 
     const text =
-      "SELECT refreshtoken FROM refresh_tokens WHERE userId = $1 AND revoked = false LIMIT 1";
+      "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1";
     const values = [userId];
 
     const result = await pool.query(text, values);
@@ -120,7 +121,7 @@ const deleteRefreshToken = async (value) => {
       userId = decoded.userId;
     }
 
-    const text = "DELETE FROM refresh_tokens WHERE userId = $1";
+    const text = "DELETE FROM refresh_tokens WHERE user_id = $1";
     const values = [userId];
 
     const result = await pool.query(text, values);

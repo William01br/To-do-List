@@ -6,17 +6,14 @@ import refreshTokens from "../models/refreshTokens.js";
 
 const execute = async () => {
   try {
-    await pool.connect();
     await pool.query(user);
     await pool.query(list);
     await pool.query(task);
     await pool.query(refreshTokens);
     return true;
   } catch (err) {
-    console.error(err.stack);
-    return false;
-  } finally {
-    await pool.end();
+    console.error("Error creating tables:", err.stack);
+    throw new Error("Error creating tables:", err.stack);
   }
 };
 
