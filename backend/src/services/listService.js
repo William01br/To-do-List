@@ -122,9 +122,27 @@ const getListByListId = async (listId) => {
   }
 };
 
+const updateByListId = async (listId, userId, nameList) => {
+  try {
+    const text = `
+    UPDATE lists SET name_list = $1 WHERE id = $2 AND user_id = $3 AND is_protected = $4`;
+    const values = [nameList, listId, userId, false];
+
+    const result = await pool.query(text, values);
+    console.log(result);
+    if (result.rowCount === 0) return null;
+
+    return true;
+  } catch (err) {
+    console.error("Error updating list by listId:", err);
+    throw new Error("Failed to update list by listId");
+  }
+};
+
 export default {
   createListDefault,
   createList,
   getAllListsByUserId,
   getListByListId,
+  updateByListId,
 };
