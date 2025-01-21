@@ -35,4 +35,19 @@ const getAllLists = async (req, res) => {
   }
 };
 
-export { createList, getAllLists };
+const getListByListId = async (req, res) => {
+  try {
+    const listId = req.params.listId;
+    if (!listId)
+      return res.status(400).json({ message: "list Id is required" });
+
+    const result = await listService.getListByListId(listId);
+    if (!result) return res.status(200).json({ message: "List not found" });
+
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export { createList, getAllLists, getListByListId };

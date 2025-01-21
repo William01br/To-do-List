@@ -37,31 +37,39 @@ const getAllListsByUserId = async (userId) => {
   try {
     const text = `
     SELECT 
-      l.id AS list_id,
-      l.name_list,
-      l.created_at,
-    COALESCE(ARRAY_AGG(
-      JSON_BUILD_OBJECT(
-          'task_id', t.id,
-          'task_name', t.name_task,
-          'task_description', t.comment,
-          'task_due_date', t.due_date,
-          'task_finished', t.completed,
-          'task_created_at', t.created_at
-      )
-      ORDER BY t.created_at
-    ), '{}') AS tasks
+    l.id AS list_id,
+    l.name_list,
+    l.created_at,
+    COALESCE(
+        ARRAY_AGG(
+            CASE 
+                WHEN t.id IS NOT NULL AND t.name_task IS NOT NULL THEN
+                    JSON_BUILD_OBJECT(
+                        'task_id', t.id,
+                        'task_name', t.name_task,
+                        'task_description', t.comment,
+                        'task_due_date', t.due_date,
+                        'task_finished', t.completed,
+                        'task_created_at', t.created_at
+                    )
+                ELSE NULL
+            END
+            ORDER BY t.created_at
+        ), '{}'
+    ) AS tasks
     FROM 
-      lists l 
+      lists l
     LEFT JOIN 
       tasks t ON l.id = t.list_id
     WHERE 
       l.user_id = $1
-    GROUP BY l.id`;
+    GROUP BY 
+      l.id, l.name_list, l.created_at`;
     const value = [userId];
 
     const result = await pool.query(text, value);
     if (result.rows.length === 0) return null;
+    console.log(result.rows);
 
     return result.rows;
   } catch (err) {
@@ -70,4 +78,53 @@ const getAllListsByUserId = async (userId) => {
   }
 };
 
-export default { createListDefault, createList, getAllListsByUserId };
+const getListByListId = async (listId) => {
+  try {
+    const text = `
+    SELECT 
+    l.id AS list_id,
+    l.name_list,
+    l.created_at,
+    COALESCE(
+        ARRAY_AGG(
+            CASE 
+                WHEN t.id IS NOT NULL AND t.name_task IS NOT NULL THEN
+                    JSON_BUILD_OBJECT(
+                        'task_id', t.id,
+                        'task_name', t.name_task,
+                        'task_description', t.comment,
+                        'task_due_date', t.due_date,
+                        'task_finished', t.completed,
+                        'task_created_at', t.created_at
+                    )
+                ELSE NULL
+            END
+            ORDER BY t.created_at
+        ), '{}'
+    ) AS tasks
+    FROM 
+      lists l
+    LEFT JOIN 
+      tasks t ON l.id = t.list_id
+    WHERE 
+      l.id = $1
+    GROUP BY 
+      l.id, l.name_list, l.created_at`;
+    const value = [listId];
+
+    const result = await pool.query(text, value);
+    if (result.rows.length === 0) return null;
+
+    return result.rows[0];
+  } catch (err) {
+    console.error("Error getting list by listId:", err);
+    throw new Error("Failed to get list by listId");
+  }
+};
+
+export default {
+  createListDefault,
+  createList,
+  getAllListsByUserId,
+  getListByListId,
+};
