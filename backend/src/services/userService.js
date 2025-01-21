@@ -185,7 +185,7 @@ const getAllDataUserByUserId = async (userId) => {
             'list_created_at', l.created_at,
             'list_is_protected', l.is_protected,
             'tasks', (
-                SELECT ARRAY_AGG(
+                SELECT COALESCE(ARRAY_AGG(
                     JSON_BUILD_OBJECT(
                         'task_id', t.id,
                         'task_title', t.name_task,
@@ -195,7 +195,7 @@ const getAllDataUserByUserId = async (userId) => {
                         'task_created_at', t.created_at
                     )
                     ORDER BY t.created_at
-                )
+                ), '{}')
                 FROM tasks t
                 WHERE t.list_id = l.id
             )

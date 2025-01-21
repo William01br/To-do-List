@@ -20,4 +20,19 @@ const createList = async (req, res) => {
   }
 };
 
-export { createList };
+const getAllLists = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await listService.getAllListsByUserId(userId);
+    if (!result) {
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export { createList, getAllLists };

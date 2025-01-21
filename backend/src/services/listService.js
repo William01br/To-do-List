@@ -33,4 +33,42 @@ const createList = async (listName, userId) => {
   }
 };
 
-export default { createListDefault, createList };
+const getAllListsByUserId = async (userId) => {
+  try {
+    const text = `
+    SELECT 
+      l.id AS list_id,
+      l.name_list,
+      l.created_at,
+      COALESCE(ARRAY_AGG(
+        JSON_BUILD_OBJECT(
+            'task_id', t.id,
+            'task_name', t.name_task,
+            'task_description', t.comment,
+            'task_due_date', t.due_date,
+            'task_finished', t.completed,
+            'task_created_at', t.created_at
+        )
+      ), '{}')
+      ORDER BY t.created_at
+    AS tasks
+    FROM 
+      lists l 
+    LEFT JOIN 
+      tasks t ON l.id = t.list_id
+    WHERE 
+      l.user_id = $1
+    GROUP BY l.id`;
+    const value = [userId];
+
+    const result = await pool.query(text, value);
+    if (result.rows[0].length === 0) return null;
+
+    return result.rows[0];
+  } catch (err) {
+    console.error("Error getting all lists by userId:", err);
+    throw new Error("Failed to get all lists by userId");
+  }
+};
+
+export default { createListDefault, createList, getAllListsByUserId };
