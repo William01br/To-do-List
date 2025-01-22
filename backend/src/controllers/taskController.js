@@ -1,23 +1,13 @@
-import {
-  pool,
-  insertTask,
-  updateTaskData,
-  deleteTaskData,
-} from "../models/db.js";
+import taskService from "../services/taskService.js";
 
-const showAllTasks = async (req, res) => {
-  const user_id = parseInt(req.user.userId);
-
+const getAllTasks = async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM tasks WHERE user_id = $1", [
-      user_id,
-    ]);
-    return res.status(200).json(result.rows);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "intern error of server", error: err.message });
-  }
+    const listId = req.params.listId;
+    if (!listId)
+      return res.status(400).json({ message: "List Id is required" });
+
+    const result = await taskService.getAllTasksByListId(listId);
+  } catch (err) {}
 };
 
 const createTask = async (req, res) => {
@@ -95,4 +85,4 @@ const deleteTask = async (req, res) => {
   }
 };
 
-export { showAllTasks, createTask, updateTask, deleteTask };
+export { getAllTasks, createTask, updateTask, deleteTask };

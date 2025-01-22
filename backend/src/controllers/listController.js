@@ -42,7 +42,7 @@ const getListByListId = async (req, res) => {
       return res.status(400).json({ message: "list Id is required" });
 
     const result = await listService.getListByListId(listId);
-    if (!result) return res.status(200).json({ message: "List not found" });
+    if (!result) return res.status(404).json({ message: "List not found" });
 
     return res.status(200).json(result);
   } catch (err) {
@@ -63,7 +63,10 @@ const updateList = async (req, res) => {
     const userId = req.userId;
 
     const result = await listService.updateByListId(listId, userId, listName);
-    if (!result) return res.status(200).json({ message: "List not found" });
+    if (!result)
+      return res
+        .status(404)
+        .json({ message: "List not found. Nothing was updated" });
 
     return res.status(200).json({ message: "List updated sucessfuly" });
   } catch (err) {
@@ -71,4 +74,24 @@ const updateList = async (req, res) => {
   }
 };
 
-export { createList, getAllLists, getListByListId, updateList };
+const deleteList = async (req, res) => {
+  try {
+    const listId = req.params.listId;
+    if (!listId)
+      return res.status(400).json({ message: "List Id is required" });
+
+    const userId = req.userId;
+
+    const result = await listService.deleteListByListId(listId, userId);
+    if (!result)
+      return res
+        .status(404)
+        .json({ message: "List not found. Nothing was deleted" });
+
+    return res.status(200).json({ message: "List deleted successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export { createList, getAllLists, getListByListId, updateList, deleteList };

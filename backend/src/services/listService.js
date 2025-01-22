@@ -139,10 +139,26 @@ const updateByListId = async (listId, userId, nameList) => {
   }
 };
 
+const deleteListByListId = async (listId, userId) => {
+  try {
+    const text = `DELETE FROM lists WHERE id = $1 AND user_id = $2 AND is_protected = $3`;
+    const values = [listId, userId, false];
+
+    const result = await pool.query(text, values);
+    if (result.rowCount.length === 0) return null;
+
+    return true;
+  } catch (err) {
+    console.error("Error deleting list by listId:", err);
+    throw new Error("Failed to delete list by listId");
+  }
+};
+
 export default {
   createListDefault,
   createList,
   getAllListsByUserId,
   getListByListId,
   updateByListId,
+  deleteListByListId,
 };
