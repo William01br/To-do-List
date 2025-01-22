@@ -7,7 +7,11 @@ import {
   updateList,
   deleteList,
 } from "../controllers/listController.js";
-import { getAllTasks, createTask } from "../controllers/taskController.js";
+import {
+  getAllTasks,
+  createTask,
+  getTaskByTaskId,
+} from "../controllers/taskController.js";
 import authenticateToken from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -27,6 +31,8 @@ router.delete("/remove/:listId", authenticateToken, deleteList);
 // */
 
 router.get("/:listId/tasks", authenticateToken, getAllTasks);
+
+router.get("/:listId/tasks/:taskId", authenticateToken, getTaskByTaskId);
 
 router.post("/:listId/tasks", authenticateToken, createTask);
 

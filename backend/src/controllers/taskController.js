@@ -39,7 +39,6 @@ const createTask = async (req, res) => {
       dueDate,
       listId
     );
-
     if (!result) return res.status(404).json({ message: "List not found" });
 
     return res.status(200).json({ task: result });
@@ -48,4 +47,28 @@ const createTask = async (req, res) => {
   }
 };
 
-export { getAllTasks, createTask };
+const getTaskByTaskId = async (req, res) => {
+  try {
+    const listId = req.params.listId;
+    const taskId = req.params.taskId;
+
+    if (!listId || !taskId)
+      return res
+        .status(400)
+        .json({ message: "ListId and TaskId are required" });
+
+    const result = await taskService.getTaskByTaskId(listId, taskId);
+    console.log(result);
+
+    if (!result) return res.status(404).json({ message: "List not found" });
+
+    if (result.length === 0)
+      return res.status(404).json({ message: "Task not found" });
+
+    return res.status(200).json(result[0]);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export { getAllTasks, createTask, getTaskByTaskId };

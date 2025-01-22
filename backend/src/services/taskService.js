@@ -4,8 +4,10 @@ const verifyListExist = async (listId) => {
   try {
     const text = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1)`;
     const value = [listId];
+    console.log(listId);
 
     const listExist = await pool.query(text, value);
+    console.log(listExist);
     if (!listExist) return null;
 
     return listExist;
@@ -50,4 +52,21 @@ const createTask = async (nameTask, comment, dueDate, listId) => {
   }
 };
 
-export default { getAllTasksByListId, createTask };
+const getTaskByTaskId = async (listId, taskId) => {
+  try {
+    const listExistence = await verifyListExist(listId);
+    if (!listExistence) return null;
+
+    const text = `SELECT * FROM tasks WHERE list_id = $1 AND id = $2`;
+    const values = [listId, taskId];
+
+    const result = await pool.query(text, values);
+    console.log(result);
+    return result.rows;
+  } catch (err) {
+    console.error("Error getting task by taskId:", err);
+    throw new Error("Failed to get task by taskId");
+  }
+};
+
+export default { getAllTasksByListId, createTask, getTaskByTaskId };
