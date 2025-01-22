@@ -12,85 +12,40 @@ const getAllTasks = async (req, res) => {
 
     if (result.length === 0)
       return res.status(200).json({ tasks: [], message: "There are no tasks" });
-    return res.status(200).json({ tasks: result });
+    return res.status(200).json(result);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
 
 const createTask = async (req, res) => {
-  const { title, description, due_date } = req.body;
-  const user_id = parseInt(req.user.userId);
-
+  /*
+   * Considering the client will send the date in format:
+   * ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
+   * example: 2025-01-22T15:30:00Z
+   */
   try {
-    const result = await insertTask(user_id, title, description, due_date);
+    const { nameTask, comment, dueDate } = req.body;
+    if (!nameTask || !comment || !dueDate)
+      return res.status(404).json({ message: "All fields are required" });
 
-    if (!result)
-      return res
-        .status(500)
-        .json({ message: "Task creation failed", error: err.message });
-    return res.status(201).json({ message: "task created successfully" });
+    const listId = req.params.listId;
+    if (!listId)
+      return res.status(400).json({ message: "List Id is required" });
+
+    const result = await taskService.createTask(
+      nameTask,
+      comment,
+      dueDate,
+      listId
+    );
+
+    if (!result) return res.status(404).json({ message: "List not found" });
+
+    return res.status(200).json({ task: result });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "intern error of server", error: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
-const updateTask = async (req, res) => {
-  const updates = req.body;
-  const taskId = parseInt(req.params.id);
-  const user_id = parseInt(req.user.userId);
-
-  // query + placeholders
-  let setClause = [];
-  // valores para o placeholder
-  let values = [];
-  let index = 1;
-
-  for (let key in updates) {
-    if (updates.hasOwnProperty(key)) {
-      setClause.push(`${key} = $${index}`);
-      values.push(updates[key]);
-      index++;
-    }
-  }
-
-  if (setClause.length === 0) {
-    return res.status(400).json({ message: "No updates provided" });
-  }
-
-  values.push(user_id, taskId);
-
-  try {
-    const result = await updateTaskData(setClause, values, index);
-
-    if (!result)
-      return res.status(500).json({ message: "Task wasn't possible update" });
-    return res.status(200).json({ message: "Task successfully updated" });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "intern error of server", error: err.message });
-  }
-};
-
-const deleteTask = async (req, res) => {
-  const taskId = parseInt(req.params.id);
-  const user_id = parseInt(req.user.userId);
-  console.log(taskId, user_id);
-
-  try {
-    const result = await deleteTaskData(taskId, user_id);
-
-    if (result === 0)
-      return res.status(500).json({ message: "Task wasn't found" });
-    return res.status(200).json({ message: "Task successfully deleted" });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "intern error of server", error: err.message });
-  }
-};
-
-export { getAllTasks, createTask, updateTask, deleteTask };
+export { getAllTasks, createTask };
