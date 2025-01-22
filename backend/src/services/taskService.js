@@ -1,12 +1,19 @@
 import { pool } from "../config/database.js";
+import list from "../models/list.js";
 
 const getAllTasksByListId = async (listId) => {
   try {
+    const text1 = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1)`;
+    const value1 = [listId];
+
+    const listExist = await pool.query(text1, value1);
+    if (!listExist) return null;
+
     const text = `SELECT * FROM tasks WHERE list_id = $1`;
     const value = [listId];
 
     const result = await pool.query(text, value);
-    if (result.rows.length === 0) return null;
+    if (!result) return null;
 
     return result.rows;
   } catch (err) {

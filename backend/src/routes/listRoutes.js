@@ -26,6 +26,6 @@ router.delete("/remove/:listId", authenticateToken, deleteList);
 // ROUTES FOR TASKS
 // */
 
-router.get("/lists/:listId/tasks", authenticateToken, getAllTasks);
+router.get("/:listId/tasks", authenticateToken, getAllTasks);
 
 export default router;

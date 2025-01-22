@@ -7,7 +7,15 @@ const getAllTasks = async (req, res) => {
       return res.status(400).json({ message: "List Id is required" });
 
     const result = await taskService.getAllTasksByListId(listId);
-  } catch (err) {}
+
+    if (!result) return res.status(404).json({ message: "List not found" });
+
+    if (result.length === 0)
+      return res.status(200).json({ tasks: [], message: "There are no tasks" });
+    return res.status(200).json({ tasks: result });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 };
 
 const createTask = async (req, res) => {
