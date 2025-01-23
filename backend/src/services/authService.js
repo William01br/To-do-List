@@ -86,11 +86,8 @@ const login = async (email, password) => {
 };
 
 // Receive a refresh token and creates a new acess token.
-const getTokenRefresh = async (providedRefreshToken, providedUserId) => {
+const getAcessToken = async (refreshToken, userId) => {
   try {
-    const userId = providedUserId;
-    console.log(userId);
-
     const text =
       "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1";
     const values = [userId];
@@ -98,9 +95,9 @@ const getTokenRefresh = async (providedRefreshToken, providedUserId) => {
     const result = await pool.query(text, values);
     if (result.rows[0].lenght === 0 || !result) return null;
 
-    const storedToken = result.rows[0].refreshtoken;
+    const storedToken = result.rows[0].refresh_token;
 
-    const isMatch = await bcrypt.compare(providedRefreshToken, storedToken);
+    const isMatch = await bcrypt.compare(refreshToken, storedToken);
     if (!isMatch) return null;
 
     return generateAcessToken(userId);
@@ -134,7 +131,7 @@ const deleteRefreshToken = async (value) => {
 
 export default {
   login,
-  getTokenRefresh,
+  getAcessToken,
   getTokens,
   deleteRefreshToken,
 };

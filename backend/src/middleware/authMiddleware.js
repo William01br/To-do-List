@@ -4,22 +4,27 @@
  */
 
 import jwt from "jsonwebtoken";
+import { decrypt } from "../utils/crypto.js";
 
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer "))
-    return res.status(401).json({ message: "Unauthorized: token not found" });
-
-  const token = authHeader.split(" ")[1];
-
   try {
-    // verifiy if the token is temporary or acess.
+    const encryptedToken = req.signedCookies.acessToken;
+
+    if (!encryptedToken)
+      return res.status(401).json({ message: "Unauthorized: token not found" });
+
+    // decrypt the token encrypted in the cookies and send only the Buffer.
+    const decryptedToken = decrypt(encryptedToken);
+
+    // verify if the token is temporary or acess.
     let decoded;
     if (req.temporarySession) {
-      decoded = jwt.verify(token, process.env.TEMPORARY_VERIFICATION_TOKEN);
+      decoded = jwt.verify(
+        decryptedToken,
+        process.env.TEMPORARY_VERIFICATION_TOKEN
+      );
     } else {
-      decoded = jwt.verify(token, process.env.ACESS_TOKEN_SECRET);
+      decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
     }
 
     if (!decoded)

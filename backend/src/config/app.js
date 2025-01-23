@@ -1,6 +1,7 @@
 import express from "express";
 import passport from "passport";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 
 import userRoutes from "../routes/userRoutes.js";
 import authRoutes from "../routes/authRoutes.js";
@@ -17,6 +18,8 @@ app.use(
     saveUninitialized: false,
   })
 );
+
+app.use(cookieParser(process.env.COOKIE_PARSER_SECRET));
 
 app.use(passport.initialize());
 app.use(passport.session());
