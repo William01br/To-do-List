@@ -71,4 +71,56 @@ const getTaskByTaskId = async (req, res) => {
   }
 };
 
-export { getAllTasks, createTask, getTaskByTaskId };
+const updateTask = async (req, res) => {
+  try {
+    const listId = req.params.listId;
+    const taskId = req.params.taskId;
+
+    if (!listId || !taskId)
+      return res
+        .status(400)
+        .json({ message: "ListId and TaskId are required" });
+
+    /*
+     * The client will send the date in format:
+     * ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
+     * example: 2025-01-22T15:30:00Z
+     */
+
+    const fields = req.body;
+
+    const sanitizedFields = Object.fromEntries(
+      Object.entries(fields).map(([key, value]) => [
+        key,
+        value === "" ? null : value,
+      ])
+    );
+
+    const { nameTask, comment, dueDate, completed } = sanitizedFields;
+
+    if (!nameTask && !comment && !dueDate && !completed)
+      return res
+        .status(400)
+        .json({ message: "Is required update one field, at least" });
+
+    const result = await taskService.updateTaskByTaskId(
+      listId,
+      taskId,
+      nameTask,
+      comment,
+      dueDate,
+      completed
+    );
+
+    if (!result) return res.status(404).json({ message: "List not found" });
+
+    if (result === 0)
+      return res.status(404).json({ message: "Task not found" });
+
+    return res.status(200).json({ message: "Task updated successfully" });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export { getAllTasks, createTask, getTaskByTaskId, updateTask };

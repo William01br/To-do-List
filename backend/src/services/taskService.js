@@ -69,4 +69,42 @@ const getTaskByTaskId = async (listId, taskId) => {
   }
 };
 
-export default { getAllTasksByListId, createTask, getTaskByTaskId };
+const updateTaskByTaskId = async (
+  listId,
+  taskId,
+  nameTask,
+  comment,
+  dueDate,
+  completed
+) => {
+  try {
+    const listExist = await verifyListExist(listId);
+    if (!listExist) return null;
+
+    const text = `
+        UPDATE tasks 
+        SET 
+          name_task = COALESCE($1, name_task),
+          comment = COALESCE($2, comment),
+          due_date = COALESCE($3, due_date),
+          completed = COALESCE($4, completed)
+        WHERE list_id = $5 AND id = $6`;
+    const values = [nameTask, comment, dueDate, completed, listId, taskId];
+    console.log(values);
+
+    const result = await pool.query(text, values);
+    // console.log(result);
+
+    return result.rowCount;
+  } catch (err) {
+    console.error("Error updating task by taskId:", err);
+    throw new Error("Failed to update task by taskId");
+  }
+};
+
+export default {
+  getAllTasksByListId,
+  createTask,
+  getTaskByTaskId,
+  updateTaskByTaskId,
+};

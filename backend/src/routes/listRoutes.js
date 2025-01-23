@@ -11,6 +11,7 @@ import {
   getAllTasks,
   createTask,
   getTaskByTaskId,
+  updateTask,
 } from "../controllers/taskController.js";
 import authenticateToken from "../middleware/authMiddleware.js";
 
@@ -35,5 +36,7 @@ router.get("/:listId/tasks", authenticateToken, getAllTasks);
 router.get("/:listId/tasks/:taskId", authenticateToken, getTaskByTaskId);
 
 router.post("/:listId/tasks", authenticateToken, createTask);
+
+router.patch("/:listId/tasks/:taskId", authenticateToken, updateTask);
 
 export default router;
