@@ -1,13 +1,12 @@
 import { pool } from "../config/database.js";
 
-const verifyListExist = async (listId) => {
+const verifyListExist = async (listId, userId) => {
   try {
-    const text = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1)`;
-    const value = [listId];
+    const text = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`;
+    const values = [listId, userId];
     console.log(listId);
 
-    const listExist = await pool.query(text, value);
-    console.log(listExist);
+    const listExist = await pool.query(text, values);
     if (!listExist) return null;
 
     return listExist;
@@ -17,9 +16,9 @@ const verifyListExist = async (listId) => {
   }
 };
 
-const getAllTasksByListId = async (listId) => {
+const getAllTasksByListId = async (listId, userId) => {
   try {
-    const listExistence = await verifyListExist(listId);
+    const listExistence = await verifyListExist(listId, userId);
     if (!listExistence) return null;
 
     const text = `SELECT * FROM tasks WHERE list_id = $1`;
@@ -35,9 +34,9 @@ const getAllTasksByListId = async (listId) => {
   }
 };
 
-const createTask = async (nameTask, comment, dueDate, listId) => {
+const createTask = async (nameTask, comment, dueDate, listId, userId) => {
   try {
-    const listExistence = await verifyListExist(listId);
+    const listExistence = await verifyListExist(listId, userId);
     if (!listExistence) return null;
 
     const text = `INSERT INTO tasks (name_task, comment, due_date, list_id) VALUES ($1, $2, $3, $4) RETURNING *`;
@@ -52,9 +51,9 @@ const createTask = async (nameTask, comment, dueDate, listId) => {
   }
 };
 
-const getTaskByTaskId = async (listId, taskId) => {
+const getTaskByTaskId = async (listId, taskId, userId) => {
   try {
-    const listExistence = await verifyListExist(listId);
+    const listExistence = await verifyListExist(listId, userId);
     if (!listExistence) return null;
 
     const text = `SELECT * FROM tasks WHERE list_id = $1 AND id = $2`;
@@ -75,10 +74,11 @@ const updateTaskByTaskId = async (
   nameTask,
   comment,
   dueDate,
-  completed
+  completed,
+  userId
 ) => {
   try {
-    const listExist = await verifyListExist(listId);
+    const listExist = await verifyListExist(listId, userId);
     if (!listExist) return null;
 
     const text = `
@@ -102,9 +102,27 @@ const updateTaskByTaskId = async (
   }
 };
 
+const deleteTaskByTaskId = async (listId, taskId, userId) => {
+  try {
+    const listExist = await verifyListExist(listId, userId);
+    if (!listExist) return null;
+
+    const text = `DELETE FROM tasks WHERE list_id = $1 AND id = $2`;
+    const values = [listId, taskId];
+
+    const result = await pool.query(text, values);
+
+    return result.rowCount;
+  } catch (err) {
+    console.error("Error deleting task by taskId:", err);
+    throw new Error("Failed to delete task by taskId");
+  }
+};
+
 export default {
   getAllTasksByListId,
   createTask,
   getTaskByTaskId,
   updateTaskByTaskId,
+  deleteTaskByTaskId,
 };

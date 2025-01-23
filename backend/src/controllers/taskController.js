@@ -6,7 +6,9 @@ const getAllTasks = async (req, res) => {
     if (!listId)
       return res.status(400).json({ message: "List Id is required" });
 
-    const result = await taskService.getAllTasksByListId(listId);
+    const userId = req.userId;
+
+    const result = await taskService.getAllTasksByListId(listId, userId);
 
     if (!result) return res.status(404).json({ message: "List not found" });
 
@@ -33,11 +35,14 @@ const createTask = async (req, res) => {
     if (!listId)
       return res.status(400).json({ message: "List Id is required" });
 
+    const userId = req.userId;
+
     const result = await taskService.createTask(
       nameTask,
       comment,
       dueDate,
-      listId
+      listId,
+      userId
     );
     if (!result) return res.status(404).json({ message: "List not found" });
 
@@ -57,7 +62,9 @@ const getTaskByTaskId = async (req, res) => {
         .status(400)
         .json({ message: "ListId and TaskId are required" });
 
-    const result = await taskService.getTaskByTaskId(listId, taskId);
+    const userId = req.userId;
+
+    const result = await taskService.getTaskByTaskId(listId, taskId, userId);
     console.log(result);
 
     if (!result) return res.status(404).json({ message: "List not found" });
@@ -73,6 +80,7 @@ const getTaskByTaskId = async (req, res) => {
 
 const updateTask = async (req, res) => {
   try {
+    const userId = req.userId;
     const listId = req.params.listId;
     const taskId = req.params.taskId;
 
@@ -109,7 +117,8 @@ const updateTask = async (req, res) => {
       nameTask,
       comment,
       dueDate,
-      completed
+      completed,
+      userId
     );
 
     if (!result) return res.status(404).json({ message: "List not found" });
@@ -123,4 +132,30 @@ const updateTask = async (req, res) => {
   }
 };
 
-export { getAllTasks, createTask, getTaskByTaskId, updateTask };
+const deleteTask = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const listId = req.params.listId;
+    const taskId = req.params.taskId;
+
+    if (!listId || !taskId)
+      return res
+        .status(400)
+        .json({ message: "ListId and TaskId are required" });
+
+    const result = await taskService.deleteTaskByTaskId(listId, taskId, userId);
+
+    if (!result) return res.status(404).json({ message: "List not found" });
+
+    if (result === 0)
+      return res
+        .status(404)
+        .json({ message: "Task not found. Nothing was deleted" });
+
+    return res.status(200).json({ message: "Task deleted successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export { getAllTasks, createTask, getTaskByTaskId, updateTask, deleteTask };
