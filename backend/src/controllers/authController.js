@@ -4,6 +4,7 @@
  */
 
 import authService from "../services/authService.js";
+import userService from "../services/userService.js";
 import { encrypt } from "../utils/crypto.js";
 
 const login = async (req, res) => {
@@ -33,7 +34,7 @@ const login = async (req, res) => {
       signed: true,
       sameSite: "strict",
       secure: false,
-      maxAge: 300000, // 5 minutes
+      maxAge: 1440000, // 1h
     });
 
     res.cookie("refreshToken", refreshTokenEncrypted, {
@@ -69,7 +70,7 @@ const getAcessToken = async (req, res) => {
       signed: true,
       sameSite: "strict",
       secure: false,
-      maxAge: 300000, // 5 minutes
+      maxAge: 1440000, // 1h
     });
     return res.status(200).json({ message: "acess Token recovered" });
   } catch (err) {
@@ -77,4 +78,44 @@ const getAcessToken = async (req, res) => {
   }
 };
 
-export { login, getAcessToken };
+const loginByOAuth = async (req, res) => {
+  try {
+    const profile = req.user;
+    console.log(profile);
+    let user = await userService.findUserByOauthId(profile.id);
+
+    if (!user || user.length === 0) {
+      user = await userService.registerByOAuth({
+        oauthId: profile.id,
+        name: profile.displayName,
+        email: profile.emails[0].value,
+        avatar: profile.photos[0].value,
+      });
+    }
+    const tokens = await authService.getTokens(user.id);
+
+    const encryptedAcessToken = encrypt(tokens.acessToken);
+    const encryptedRefreshToken = encrypt(tokens.refreshToken);
+
+    res.cookie("acessToken", encryptedAcessToken, {
+      httpOnly: true,
+      signed: true,
+      sameSite: "strict",
+      secure: false,
+      maxAge: 1440000, // 1h
+    });
+
+    res.cookie("refreshToken", encryptedRefreshToken, {
+      httpOnly: true,
+      signed: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 604800000, // 7 days
+    });
+    return res.status(200).json(user);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export { login, getAcessToken, loginByOAuth };

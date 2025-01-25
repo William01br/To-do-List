@@ -10,7 +10,6 @@ const execute = async () => {
     await pool.query(list);
     await pool.query(task);
     await pool.query(refreshTokens);
-    return true;
   } catch (err) {
     console.error("Error creating tables:", err.stack);
     throw new Error("Error creating tables:", err.stack);

@@ -9,21 +9,18 @@ import { pool } from "../config/database.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-const generateAcessToken = (userId) => {
-  return jwt.sign({ userId }, process.env.ACESS_TOKEN_SECRET, {
-    expiresIn: "12h",
+const generateAcessToken = (userId) =>
+  jwt.sign({ userId }, process.env.ACESS_TOKEN_SECRET, {
+    expiresIn: "1h",
   });
-};
 
-const generateRefreshToken = (userId) => {
-  return jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
+const generateRefreshToken = (userId) =>
+  jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: "7d",
   });
-};
 
-const hashRefreshToken = async (refreshToken) => {
-  return await bcrypt.hash(refreshToken, 10);
-};
+const hashRefreshToken = async (refreshToken) =>
+  await bcrypt.hash(refreshToken, 10);
 
 const storeRefreshToken = async (userId, hashedRefreshToken) => {
   const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
@@ -32,11 +29,10 @@ const storeRefreshToken = async (userId, hashedRefreshToken) => {
 
   try {
     const text =
-      "INSERT INTO refresh_tokens (user_id, refresh_token, expires_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id";
+      "INSERT INTO refresh_tokens (user_id, refresh_token, expires_at, updated_at) VALUES ($1, $2, $3, $4)";
     const values = [userId, hashedRefreshToken, expiresAt, updatedAt];
 
-    const result = await pool.query(text, values);
-    return result.rows[0];
+    await pool.query(text, values);
   } catch (err) {
     console.error("Error storing refresh token:", err);
     throw new Error("Failed to store refresh token");
@@ -54,10 +50,7 @@ const getTokens = async (userId) => {
 
     const hashedRefreshToken = await hashRefreshToken(refreshToken);
 
-    const idStoredRefreshToken = await storeRefreshToken(
-      userId,
-      hashedRefreshToken
-    );
+    await storeRefreshToken(userId, hashedRefreshToken);
 
     return { acessToken: acessToken, refreshToken: refreshToken };
   } catch (err) {
@@ -107,22 +100,12 @@ const getAcessToken = async (refreshToken, userId) => {
   }
 };
 
-// value should be a token (string) or userId (number).
-const deleteRefreshToken = async (value) => {
+const deleteRefreshToken = async (userId) => {
   try {
-    let userId;
-    if (typeof value === "number") {
-      userId = value;
-    } else {
-      const decoded = jwt.decode(value, process.env.REFRESH_TOKEN_SECRET);
-      userId = decoded.userId;
-    }
-
     const text = "DELETE FROM refresh_tokens WHERE user_id = $1";
     const values = [userId];
 
-    const result = await pool.query(text, values);
-    return result.rowCount;
+    await pool.query(text, values);
   } catch (err) {
     console.error("Error deleting refresh token:", err);
     throw new Error("refresh token not deleted");

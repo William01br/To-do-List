@@ -3,15 +3,17 @@ import authService from "../services/authService.js";
 import { decrypt } from "../utils/crypto.js";
 
 const verifyExpirationToken = async (req, res, next) => {
-  const refreshToken = req.signedCookies.refreshToken;
-
-  // Decrypting the refresh token recovered by cookies
-  const decryptedRefreshToken = decrypt(refreshToken);
-
-  if (!refreshToken)
-    return res.status(401).json({ message: "refresh token is required" });
-
   try {
+    const refreshToken = req.signedCookies.refreshToken;
+
+    if (!refreshToken)
+      return res
+        .status(401)
+        .json({ message: "refresh token not found or expired" });
+
+    // Decrypting the refresh token recovered by cookies
+    const decryptedRefreshToken = decrypt(refreshToken);
+
     const decoded = jwt.verify(
       decryptedRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
@@ -20,16 +22,6 @@ const verifyExpirationToken = async (req, res, next) => {
     req.refreshToken = decryptedRefreshToken;
     next();
   } catch (err) {
-    if (err.name === "TokenExpiredError") {
-      const result = await authService.deleteRefreshToken(
-        decryptedRefreshToken
-      );
-      return res.status(403).json({
-        message: "Refresh Token expired",
-        expiredAt: err.expiredAt,
-        deleted: result,
-      });
-    }
     return res.status(500).json({ message: err.message });
   }
 };

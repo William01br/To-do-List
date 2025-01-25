@@ -11,7 +11,9 @@ const authenticateToken = (req, res, next) => {
     const encryptedToken = req.signedCookies.acessToken;
 
     if (!encryptedToken)
-      return res.status(401).json({ message: "Unauthorized: token not found" });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: token not found or expired" });
 
     // decrypt the token encrypted in the cookies and send only the Buffer.
     const decryptedToken = decrypt(encryptedToken);

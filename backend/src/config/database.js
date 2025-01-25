@@ -19,7 +19,7 @@ const testDbConnection = async () => {
   }
 };
 
-// call this function for to create the tables and after comment the line.
+// execute the function for create tables. After this, comment the line for avoid unnecessary calls for DB.
 // execute();
 
 export { pool, testDbConnection };

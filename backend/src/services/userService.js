@@ -18,14 +18,12 @@ const register = async (username, email, password) => {
       "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
 
     const passwordHashed = await bcrypt.hash(password, 10);
-    console.log(passwordHashed);
 
     const text =
       "INSERT INTO users(username, email, password, avatar) VALUES ($1, $2, $3, $4) RETURNING id, username, email, avatar, created_at";
     const values = [username, email, passwordHashed, avatarUrl];
 
     const result = await pool.query(text, values);
-    console.log(result.rows[0]);
 
     return result.rows[0];
   } catch (err) {
@@ -41,7 +39,6 @@ const findUserByOauthId = async (oauthId) => {
     const value = [oauthId];
 
     const result = await pool.query(text, value);
-    console.log(result.rows[0]);
     return result.rows[0];
   } catch (err) {
     console.error("Error finding user by oauthId:", err);
@@ -52,11 +49,10 @@ const findUserByOauthId = async (oauthId) => {
 const registerByOAuth = async (data) => {
   try {
     const { oauthId, name, email, avatar } = data;
-    console.log(data);
     const oauthProvider = "google";
     const username = name.split(" ")[0];
     const text =
-      "INSERT INTO users (username, email, oauth_provider, oauth_id, avatar) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+      "INSERT INTO users (username, email, oauth_provider, oauth_id, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING *";
     const values = [username, email, oauthProvider, oauthId, avatar];
 
     const result = await pool.query(text, values);
@@ -150,8 +146,7 @@ const sendEmailToResetPassword = async (emailProvided) => {
       "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3";
     const values1 = [resetToken, dateExpires, userEmail];
 
-    const result1 = await pool.query(text1, values1);
-    console.log(result1);
+    await pool.query(text1, values1);
 
     // send email with reset link
     const resetUrl = `localhost:3000/user/reset-password/${resetToken}`;
