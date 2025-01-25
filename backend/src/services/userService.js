@@ -5,11 +5,12 @@
 
 import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
-import jwt from "jsonwebtoken";
 
 import { pool } from "../config/database.js";
 import { bufferToStream } from "../utils/bufferToStream.js";
 import "../config/cloudinary.js";
+import { createTokenReset } from "../utils/crypto.js";
+import { transporter } from "../config/nodemailer.js";
 
 const register = async (username, email, password) => {
   try {
@@ -129,43 +130,72 @@ const updateAvatar = async (url, userId) => {
   }
 };
 
-const verifyPassword = async (userId, password) => {
+const sendEmailToResetPassword = async (emailProvided) => {
   try {
-    const text = "SELECT * FROM users WHERE id = $1";
-    const value = [userId];
+    const text = "SELECT * FROM users WHERE email = $1";
+    const value = [emailProvided];
     const result = await pool.query(text, value);
-    const hashPassword = result.rows[0].password;
+    console.log(result.rows);
 
-    const matchPassword = await bcrypt.compare(password, hashPassword);
-    if (!matchPassword) return null;
+    const userEmail = result.rows[0].email;
+    console.log(userEmail);
 
-    const temporaryToken = jwt.sign(
-      { userId },
-      process.env.TEMPORARY_VERIFICATION_TOKEN,
-      { expiresIn: "25m" }
-    );
-    return temporaryToken;
+    if (!userEmail) return null;
+
+    const resetToken = createTokenReset();
+    const dateExpires = new Date(Date.now() + 3600000); // 1 hour
+    console.log(resetToken, typeof resetToken, dateExpires);
+
+    const text1 =
+      "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3";
+    const values1 = [resetToken, dateExpires, userEmail];
+
+    const result1 = await pool.query(text1, values1);
+    console.log(result1);
+
+    // send email with reset link
+    const resetUrl = `localhost:3000/user/reset-password/${resetToken}`;
+
+    const mailOptions = {
+      to: userEmail,
+      from: process.env.EMAIL_USER,
+      subject: "Password Reset",
+      text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
+      Please click on the following link, or paste this into your browser to complete the process:\n\n
+      ${resetUrl}\n\n
+      If you did not request this, please ignore this email and your password will remain unchanged.\n`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
   } catch (err) {
-    console.error("Error verifying password:", err);
-    throw new Error("Error verifying password");
+    console.error("Error Send Email:", err);
+    throw new Error("Error Send Email");
   }
 };
 
-const updatePassword = async (userId, password) => {
+const resetPassword = async (newPassword, resetToken) => {
   try {
-    console.log(password);
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const text =
+      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()";
+    const value = [resetToken];
 
-    const text = "UPDATE users SET password = $1 WHERE id = $2";
-    const values = [hashedPassword, userId];
-
-    const result = pool.query(text, values);
+    const result = await pool.query(text, value);
+    console.log(result);
     if (result.rowCount === 0) return null;
+
+    const passwordHashed = await bcrypt.hash(newPassword, 10);
+
+    const text1 =
+      "UPDATE users SET password = $1, reset_password_token = $2, reset_password_expires = $3 WHERE reset_password_token = $4";
+    const values1 = [passwordHashed, null, null, resetToken];
+
+    await pool.query(text1, values1);
 
     return true;
   } catch (err) {
-    console.error("Error updating password:", err);
-    throw new Error("Error updating password");
+    console.error("Error password reset:", err);
+    throw new Error("Error password reset");
   }
 };
 
@@ -243,8 +273,8 @@ export default {
   registerByOAuth,
   uploadToCloudinary,
   updateAvatar,
-  verifyPassword,
-  updatePassword,
+  sendEmailToResetPassword,
+  resetPassword,
   getAllDataUserByUserId,
   deleteAccount,
 };

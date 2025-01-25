@@ -17,3 +17,5 @@ export const decrypt = (encryptedValue) => {
   const decrypted = crypto.privateDecrypt(privateKey, encryptedBuffer);
   return decrypted.toString();
 };
+
+export const createTokenReset = () => crypto.randomBytes(20).toString("hex");

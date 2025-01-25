@@ -5,6 +5,7 @@
 
 import userService from "../services/userService.js";
 import listService from "../services/listService.js";
+import { isPasswordValid } from "../utils/credentials.js";
 
 const register = async (req, res) => {
   const { username, email, password } = req.credentials;
@@ -66,36 +67,48 @@ const uploadImage = async (req, res) => {
   }
 };
 
-const verifyPassword = async (req, res) => {
+// forgot-password Endpoint
+const forgotPassword = async (req, res) => {
   try {
-    const userId = req.userId;
-    const { password } = req.body;
+    const { email } = req.body;
+    console.log(email);
 
-    if (!password)
-      return res.status(400).json({ message: "Password required" });
+    if (!email) return res.status(400).json({ message: "Email required" });
 
-    const result = await userService.verifyPassword(userId, password);
-    if (!result) return res.status(400).json({ message: "Wrong password" });
+    const result = await userService.sendEmailToResetPassword(email);
+    if (!result) return res.status(400).json({ message: "Email not found" });
 
-    return res
-      .status(200)
-      .json({ message: "Verified Password", temporaryToken: result });
+    return res.status(200).json({ message: "Email sended" });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
 
-const updatePassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
-    const userId = req.userId;
+    const resetToken = req.params.token;
+    console.log(resetToken);
     const { newPassword } = req.body;
 
-    if (!newPassword)
-      return res.status(400).json({ message: "Password required" });
+    if (!newPassword || !resetToken)
+      return res
+        .status(400)
+        .json({ message: "Both token and password are required" });
 
-    const result = await userService.updatePassword(userId, newPassword);
+    // verify if password is strong enough.
+    if (!isPasswordValid(newPassword))
+      return res.status(400).json({
+        message:
+          "password must contain uppercase letters, lowercase letters, numbers and at least 8 characters",
+      });
+
+    const result = await userService.resetPassword(newPassword, resetToken);
     if (!result)
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res.status(500).json({ message: "Invalid or Expired token" });
+
+    // clean any cookie with tokens after the password change
+    res.clearCookie("acessToken");
+    res.clearCookie("refreshToken");
 
     return res.status(200).json({ message: "updated password sucessfully" });
   } catch (err) {
@@ -135,8 +148,8 @@ const deleteAccount = async (req, res) => {
 export {
   register,
   uploadImage,
-  verifyPassword,
-  updatePassword,
+  forgotPassword,
+  resetPassword,
   getUserDataById,
   deleteAccount,
 };

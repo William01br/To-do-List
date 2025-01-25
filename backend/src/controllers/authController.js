@@ -26,7 +26,6 @@ const login = async (req, res) => {
 
     // encrypting the tokens for send by cookies
     const acessTokenEncrypted = encrypt(result.acessToken);
-    console.log(acessTokenEncrypted, typeof acessTokenEncrypted);
     const refreshTokenEncrypted = encrypt(result.refreshToken);
 
     res.cookie("acessToken", acessTokenEncrypted, {

@@ -16,16 +16,7 @@ const authenticateToken = (req, res, next) => {
     // decrypt the token encrypted in the cookies and send only the Buffer.
     const decryptedToken = decrypt(encryptedToken);
 
-    // verify if the token is temporary or acess.
-    let decoded;
-    if (req.temporarySession) {
-      decoded = jwt.verify(
-        decryptedToken,
-        process.env.TEMPORARY_VERIFICATION_TOKEN
-      );
-    } else {
-      decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
-    }
+    const decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
 
     if (!decoded)
       return res.status(403).json({ message: "Forbidden: token invalid" });
