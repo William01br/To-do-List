@@ -51,13 +51,13 @@ const login = async (req, res) => {
   }
 };
 
-// generates acess token from refresh token
+// generates acess token from refresh token provided
 const getAcessToken = async (req, res) => {
   try {
     const refreshToken = req.refreshToken;
     const userId = req.userId;
 
-    // contains the acess token
+    // return the acess token
     const result = await authService.getAcessToken(refreshToken, userId);
     if (!result)
       return res.status(500).json({ message: "Internal Server Error" });
@@ -78,6 +78,7 @@ const getAcessToken = async (req, res) => {
   }
 };
 
+// get informations provided by google and storage in DB.
 const loginByOAuth = async (req, res) => {
   try {
     const profile = req.user;
@@ -92,8 +93,10 @@ const loginByOAuth = async (req, res) => {
         avatar: profile.photos[0].value,
       });
     }
+    // get acess and refresh tokens
     const tokens = await authService.getTokens(user.id);
 
+    // encrpyt the tokens for will be send by cookies
     const encryptedAcessToken = encrypt(tokens.acessToken);
     const encryptedRefreshToken = encrypt(tokens.refreshToken);
 

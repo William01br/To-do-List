@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 
 import userRoutes from "../routes/userRoutes.js";
 import authRoutes from "../routes/authRoutes.js";
-import listRoutes from "../routes/listRoutes.js";
+import listAndTaskRoutes from "../routes/list-task-Routes.js";
 import { notFound } from "../middleware/notFound.js";
 import errorHandler from "../middleware/errorMiddleware.js";
 
@@ -33,7 +33,7 @@ app.use("/user", userRoutes);
 
 app.use("/auth", authRoutes);
 
-app.use("/lists", listRoutes);
+app.use("/lists", listAndTaskRoutes);
 
 app.use(errorHandler);
 

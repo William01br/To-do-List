@@ -46,6 +46,7 @@ const findUserByOauthId = async (oauthId) => {
   }
 };
 
+// function to save the user data that is registered by the OAuth provider.
 const registerByOAuth = async (data) => {
   try {
     const { oauthId, name, email, avatar } = data;
@@ -63,6 +64,18 @@ const registerByOAuth = async (data) => {
   }
 };
 
+/**
+ * Uploads a file to Cloudinary using a readable stream.
+ *
+ * This function takes a readable stream (e.g., from a file upload) and pipes it to Cloudinary's upload stream.
+ * It returns a promise that resolves with the upload result or rejects with an error if the upload fails.
+ *
+ * @async
+ * @function uploadFileToCloudinary
+ * @param {stream.Readable} readableStream - A readable stream containing the file data to be uploaded.
+ * @returns {Promise<Object>} A promise that resolves with the Cloudinary upload result.
+ * @throws {string} If an error occurs during the upload process, the promise is rejected with an error message.
+ */
 async function uploadFileToCloudinary(readableStream) {
   return new Promise((resolve, reject) => {
     const cloudinaryStream = cloudinary.uploader.upload_stream(
@@ -74,13 +87,24 @@ async function uploadFileToCloudinary(readableStream) {
         resolve(result);
       }
     );
-    console.log(readableStream);
-
-    // Pipe os dados do stream de leitura para o stream de upload
+    // Pipe the readable stream to the Cloudinary upload stream
     readableStream.pipe(cloudinaryStream);
   });
 }
 
+/**
+ * Uploads file data to Cloudinary and optimizes the uploaded image.
+ *
+ * This function takes file data, converts it to a readable stream, uploads it to Cloudinary,
+ * and then generates an optimized URL for the uploaded image with specific transformations.
+ *
+ * @async
+ * @function uploadToCloudinary
+ * @param {Object} fileData - The file data to be uploaded.
+ * @param {Buffer} fileData.buffer - The buffer containing the file data.
+ * @returns {Promise<string>} A promise that resolves with the optimized Cloudinary URL of the uploaded image.
+ * @throws {Error} If an error occurs during the upload or optimization process, an error is thrown.
+ */
 const uploadToCloudinary = async (fileData) => {
   try {
     const readableStream = bufferToStream(fileData.buffer);
@@ -102,8 +126,6 @@ const uploadToCloudinary = async (fileData) => {
         },
       ],
     });
-    console.log(url);
-
     return url;
   } catch (err) {
     console.error("Error uploading image to cloudinary:", err);
@@ -126,6 +148,18 @@ const updateAvatar = async (url, userId) => {
   }
 };
 
+/**
+ * Sends an email to reset a user's password.
+ *
+ * This function checks if the provided email exists in the database, generates a reset token,
+ * updates the user's record with the token and expiration date, and sends an email with a reset link.
+ *
+ * @async
+ * @function sendEmailToResetPassword
+ * @param {string} emailProvided - The email address provided by the user requesting a password reset.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the email is sent successfully, or `null` if the email does not exist in the database.
+ * @throws {Error} If an error occurs during the process, an error is thrown.
+ */
 const sendEmailToResetPassword = async (emailProvided) => {
   try {
     const text = "SELECT * FROM users WHERE email = $1";
@@ -138,6 +172,7 @@ const sendEmailToResetPassword = async (emailProvided) => {
 
     if (!userEmail) return null;
 
+    // Generate a reset token and set its expiration date (1 hour from now)
     const resetToken = createTokenReset();
     const dateExpires = new Date(Date.now() + 3600000); // 1 hour
     console.log(resetToken, typeof resetToken, dateExpires);
@@ -148,7 +183,7 @@ const sendEmailToResetPassword = async (emailProvided) => {
 
     await pool.query(text1, values1);
 
-    // send email with reset link
+    // Create the reset URL with the generated token
     const resetUrl = `localhost:3000/user/reset-password/${resetToken}`;
 
     const mailOptions = {
@@ -169,6 +204,20 @@ const sendEmailToResetPassword = async (emailProvided) => {
   }
 };
 
+/**
+ * Resets a user's password using a valid reset token.
+ *
+ * This function verifies the reset token, checks if it is still valid (not expired),
+ * hashes the new password, and updates the user's password in the database.
+ * It also clears the reset token and expiration date after the password is updated.
+ *
+ * @async
+ * @function resetPassword
+ * @param {string} newPassword - The new password provided by the user.
+ * @param {string} resetToken - The reset token provided by the user for verification.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the password is reset successfully, or `null` if the reset token is invalid or expired.
+ * @throws {Error} If an error occurs during the process, an error is thrown.
+ */
 const resetPassword = async (newPassword, resetToken) => {
   try {
     const text =
@@ -176,7 +225,6 @@ const resetPassword = async (newPassword, resetToken) => {
     const value = [resetToken];
 
     const result = await pool.query(text, value);
-    console.log(result);
     if (result.rowCount === 0) return null;
 
     const passwordHashed = await bcrypt.hash(newPassword, 10);

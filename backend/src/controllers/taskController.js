@@ -20,12 +20,28 @@ const getAllTasks = async (req, res) => {
   }
 };
 
+/**
+ * Creates a new task in a specific list.
+ *
+ * This function handles the creation of a new task. It validates the required fields (nameTask, comment, dueDate),
+ * ensures the list ID is provided, and associates the task with the authenticated user.
+ * The due date is expected in ISO 8601 format (e.g., `2025-01-22T15:30:00Z`).
+ *
+ * @async
+ * @function createTask
+ * @param {Object} req - The request object.
+ * @param {Object} req.body - The body of the request.
+ * @param {string} req.body.nameTask - The name of the task.
+ * @param {string} req.body.comment - Additional comments or details about the task.
+ * @param {string} req.body.dueDate - The due date of the task in ISO 8601 format (e.g., `2025-01-22T15:30:00Z`).
+ * @param {Object} req.params - The parameters extracted from the URL.
+ * @param {string} req.params.listId - The ID of the list to which the task belongs.
+ * @param {string} req.userId - The ID of the authenticated user (attached to the request object by middleware).
+ * @param {Object} res - The response object.
+ * @returns {Promise<Object>} A JSON response indicating the result of the operation.
+ * @throws {Error} If an error occurs during the process, it is caught and returned as a 500 status response.
+ */
 const createTask = async (req, res) => {
-  /*
-   * Considering the client will send the date in format:
-   * ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
-   * example: 2025-01-22T15:30:00Z
-   */
   try {
     const { nameTask, comment, dueDate } = req.body;
     if (!nameTask || !comment || !dueDate)
@@ -89,21 +105,16 @@ const updateTask = async (req, res) => {
         .status(400)
         .json({ message: "ListId and TaskId are required" });
 
-    /*
-     * The client will send the date in format:
-     * ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
-     * example: 2025-01-22T15:30:00Z
-     */
-
+    // Extract the fields to update from the request body
     const fields = req.body;
 
+    // Sanitize the fields: replace empty strings with null
     const sanitizedFields = Object.fromEntries(
       Object.entries(fields).map(([key, value]) => [
         key,
         value === "" ? null : value,
       ])
     );
-
     const { nameTask, comment, dueDate, completed } = sanitizedFields;
 
     if (!nameTask && !comment && !dueDate && !completed)

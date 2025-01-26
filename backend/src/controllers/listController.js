@@ -5,7 +5,6 @@ const createList = async (req, res) => {
     const userId = req.userId;
 
     const { listName } = req.body;
-    console.log(listName);
     if (!listName)
       return res.status(400).json({ message: "List name is required" });
 

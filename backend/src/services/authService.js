@@ -22,6 +22,18 @@ const generateRefreshToken = (userId) =>
 const hashRefreshToken = async (refreshToken) =>
   await bcrypt.hash(refreshToken, 10);
 
+/**
+ * Stores a hashed refresh token in the database for a specific user.
+ * The refresh token is associated with an expiration date (7 days from now) and a last updated timestamp.
+ *
+ * @async
+ * @function storeRefreshToken
+ * @param {string} userId - The ID of the user for whom the refresh token is being stored.
+ * @param {string} hashedRefreshToken - The hashed refresh token to store in the database.
+ * @returns {Promise<void>} A promise that resolves when the refresh token is successfully stored.
+ * @throws {Error} If the database operation fails, an error is thrown with the message "Failed to store refresh token".
+ *
+ */
 const storeRefreshToken = async (userId, hashedRefreshToken) => {
   const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
   const expiresAt = new Date(Date.now() + daysToMilliseconds(7));
@@ -39,7 +51,17 @@ const storeRefreshToken = async (userId, hashedRefreshToken) => {
   }
 };
 
-// Creates a new refresh (RF) and acess token and storage the RF. Therefore, deletes the old RF.
+/**
+ * Generates and returns a new access token and refresh token for a specific user.
+ * This function also handles the deletion of any existing refresh token for the user,
+ * hashes the new refresh token, and stores it in the database.
+ *
+ * @async
+ * @function getTokens
+ * @param {string} userId - The ID of the user for whom the tokens are being generated.
+ * @returns {Promise<{ accessToken: string, refreshToken: string }>} A promise that resolves to an object containing the new access token and refresh token.
+ * @throws {Error} If any step in the token generation process fails, an error is thrown with the message "Failed to create tokens".
+ */
 const getTokens = async (userId) => {
   try {
     await deleteRefreshToken(userId);
@@ -74,7 +96,7 @@ const login = async (email, password) => {
     return user.id;
   } catch (err) {
     console.error("Error logging in user:", err);
-    return null;
+    throw new Error("Failed logging in user");
   }
 };
 
@@ -96,10 +118,11 @@ const getAcessToken = async (refreshToken, userId) => {
     return generateAcessToken(userId);
   } catch (err) {
     console.error("Error refreshing token:", err);
-    return null;
+    throw new Error("Failed to refresh token");
   }
 };
 
+// deletes the refresh token of specific user storaged in database
 const deleteRefreshToken = async (userId) => {
   try {
     const text = "DELETE FROM refresh_tokens WHERE user_id = $1";

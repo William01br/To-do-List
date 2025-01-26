@@ -4,7 +4,6 @@ const verifyListExist = async (listId, userId) => {
   try {
     const text = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`;
     const values = [listId, userId];
-    console.log(listId);
 
     const listExist = await pool.query(text, values);
     if (!listExist) return null;
@@ -93,7 +92,6 @@ const updateTaskByTaskId = async (
     console.log(values);
 
     const result = await pool.query(text, values);
-    // console.log(result);
 
     return result.rowCount;
   } catch (err) {

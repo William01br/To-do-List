@@ -7,6 +7,11 @@ import userService from "../services/userService.js";
 import listService from "../services/listService.js";
 import { isPasswordValid } from "../utils/credentials.js";
 
+/**
+ * Handles user registration by creating a new user account and a default list for the user.
+ * This function uses the `userService` to register the user and the `listService` to create a default list.
+ * If the registration is successful, it returns the user's data. If the email is already registered, it returns a conflict error.
+ */
 const register = async (req, res) => {
   const { username, email, password } = req.credentials;
 
@@ -33,24 +38,24 @@ const register = async (req, res) => {
 
     const userData = await userService.getAllDataUserByUserId(result.id);
 
-    return res.status(200).json(userData);
+    return res
+      .status(200)
+      .json({ message: "successfully registered", data: userData });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
 
+// send the image for the cloudinary and save the image url in database.
 const uploadImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "File required" });
-    console.log(req.file);
-    console.log(req.file.buffer);
 
     const fileData = req.file;
     const userId = req.userId;
 
     // Upload file to cloudinary and return the url of the uploaded file.
     const result = await userService.uploadToCloudinary(fileData);
-    console.log(result);
     if (!result)
       return res.status(500).json({ message: "Internal Server Error" });
 
@@ -67,11 +72,10 @@ const uploadImage = async (req, res) => {
   }
 };
 
-// forgot-password Endpoint
+// validates the e-mail and sends an e-mail to the user with the URL to reset the password.
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    console.log(email);
 
     if (!email) return res.status(400).json({ message: "Email required" });
 
@@ -84,10 +88,26 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+/**
+ * Handles the reset password request.
+ *
+ * This function validates the reset token and the new password, updates the user's password,
+ * and clears any authentication tokens stored in cookies.
+ *
+ * @async
+ * @function resetPassword
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The parameters extracted from the URL.
+ * @param {string} req.params.token - The reset token provided in the URL.
+ * @param {Object} req.body - The body of the request.
+ * @param {string} req.body.newPassword - The new password provided by the user.
+ * @param {Object} res - The response object.
+ * @returns {Promise<Object>} A JSON response indicating the result of the operation.
+ * @throws {Error} If an error occurs during the process, it is caught and returned as a 500 status response.
+ */
 const resetPassword = async (req, res) => {
   try {
     const resetToken = req.params.token;
-    console.log(resetToken);
     const { newPassword } = req.body;
 
     if (!newPassword || !resetToken)
@@ -106,7 +126,7 @@ const resetPassword = async (req, res) => {
     if (!result)
       return res.status(500).json({ message: "Invalid or Expired token" });
 
-    // clean any cookie with tokens after the password change
+    // Clear any authentication tokens stored in cookies
     res.clearCookie("acessToken");
     res.clearCookie("refreshToken");
 
