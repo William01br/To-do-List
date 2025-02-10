@@ -19,7 +19,7 @@ import { decrypt } from "../utils/crypto.js";
  *                 - 401 Unauthorized: If the refresh token is missing or expired.
  *                 - 500 Internal Server Error: If an unexpected error occurs during decryption or verification.
  */
-const verifyExpirationToken = async (req, res, next) => {
+const verifyExpirationToken = (req, res, next) => {
   try {
     // Extract the encrypted token from the signed cookies.
     const refreshToken = req.signedCookies.refreshToken;

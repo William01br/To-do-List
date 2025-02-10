@@ -94,6 +94,29 @@ const getTaskByTaskId = async (req, res) => {
   }
 };
 
+/**
+ * Updates an existing task in a specific list.
+ *
+ * This function handles the updating of a task. It validates the required parameters (`listId` and `taskId`),
+ * sanitizes the fields to be updated (replacing empty strings with `null`), and ensures at least one field is provided for updating.
+ * The due date is expected in ISO 8601 format (e.g., `2025-01-22T15:30:00Z`).
+ *
+ * @async
+ * @function updateTask
+ * @param {Object} req - The request object.
+ * @param {Object} req.params - The parameters extracted from the URL.
+ * @param {string} req.params.listId - The ID of the list to which the task belongs.
+ * @param {string} req.params.taskId - The ID of the task to be updated.
+ * @param {Object} req.body - The body of the request containing the fields to update.
+ * @param {string} [req.body.nameTask] - The updated name of the task.
+ * @param {string} [req.body.comment] - The updated comments or details about the task.
+ * @param {string} [req.body.dueDate] - The updated due date of the task in ISO 8601 format (e.g., `2025-01-22T15:30:00Z`).
+ * @param {boolean} [req.body.completed] - The updated completion status of the task.
+ * @param {string} req.userId - The ID of the authenticated user (attached to the request object by middleware).
+ * @param {Object} res - The response object.
+ * @returns {Promise<Object>} A JSON response indicating the result of the operation.
+ * @throws {Error} If an error occurs during the process, it is caught and returned as a 500 status response.
+ */
 const updateTask = async (req, res) => {
   try {
     const userId = req.userId;

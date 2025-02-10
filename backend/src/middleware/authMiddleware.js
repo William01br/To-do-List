@@ -39,12 +39,10 @@ const authenticateToken = (req, res, next) => {
 
     const decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
 
-    if (!decoded)
-      return res.status(403).json({ message: "Forbidden: token invalid" });
-
     req.userId = decoded.userId;
     next();
   } catch (err) {
+    // if (err instanceof jwt.JsonWebTokenError)
     if (err.name === "JsonWebTokenError")
       return res.status(403).json({ message: "Invalid signature" });
     return res.status(500).json({ message: err.message });
