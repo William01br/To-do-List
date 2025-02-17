@@ -82,43 +82,48 @@ const getTokens = async (userId) => {
 };
 
 const login = async (email, password) => {
+  const user = await getUserByEmail(email);
+  if (!user || user.lenght === 0) return null;
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) return null;
+
+  return user.id;
+};
+
+const getUserByEmail = async (email) => {
   try {
     const text = "SELECT * FROM users WHERE email = $1";
-    const values = [email];
 
-    const result = await pool.query(text, values);
-    const user = result.rows[0];
-    if (!user) return null;
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) return null;
-
-    return user.id;
+    const result = await pool.query(text, [email]);
+    return result.rows[0];
   } catch (err) {
-    console.error("Error logging in user:", err);
-    throw new Error("Failed logging in user");
+    console.error("Error getting user data by email:", err);
+    throw new Error("Error getting user data by email");
   }
 };
 
 // Receive a refresh token and creates a new acess token.
 const getAcessToken = async (refreshToken, userId) => {
+  const storedToken = await getRefreshTokenByUserId(userId);
+  if (!storedToken || storedToken.lenght === 0) return null;
+
+  const isMatch = await bcrypt.compare(refreshToken, storedToken.refresh_token);
+  if (!isMatch) return null;
+
+  return generateAcessToken(userId);
+};
+
+const getRefreshTokenByUserId = async (userId) => {
   try {
     const text =
       "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1";
-    const values = [userId];
 
-    const result = await pool.query(text, values);
-    if (result.rows[0].lenght === 0 || !result) return null;
-
-    const storedToken = result.rows[0].refresh_token;
-
-    const isMatch = await bcrypt.compare(refreshToken, storedToken);
-    if (!isMatch) return null;
-
-    return generateAcessToken(userId);
+    const result = await pool.query(text, [userId]);
+    return result.rows[0];
   } catch (err) {
-    console.error("Error refreshing token:", err);
-    throw new Error("Failed to refresh token");
+    console.error("Error getting refresh token by userId:", err);
+    throw new Error("Error getting refresh token by userId");
   }
 };
 
@@ -126,9 +131,8 @@ const getAcessToken = async (refreshToken, userId) => {
 const deleteRefreshToken = async (userId) => {
   try {
     const text = "DELETE FROM refresh_tokens WHERE user_id = $1";
-    const values = [userId];
 
-    await pool.query(text, values);
+    await pool.query(text, [userId]);
   } catch (err) {
     console.error("Error deleting refresh token:", err);
     throw new Error("refresh token not deleted");
@@ -140,4 +144,7 @@ export default {
   getAcessToken,
   getTokens,
   deleteRefreshToken,
+  getUserByEmail,
+  getRefreshTokenByUserId,
+  generateAcessToken,
 };
