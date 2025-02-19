@@ -13,32 +13,42 @@ import { createTokenReset } from "../utils/crypto.js";
 import { transporter } from "../config/nodemailer.js";
 
 const register = async (username, email, password) => {
-  try {
-    const avatarUrl =
-      "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
+  const avatarUrl =
+    "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
 
+  try {
     const passwordHashed = await bcrypt.hash(password, 10);
 
+    const user = await insertUser(username, email, passwordHashed, avatarUrl);
+
+    return user;
+  } catch (err) {
+    // error code of value duplicate in DB.
+    if (err.code === "23505") return 23505;
+
+    console.error("Error registering user:", err);
+    throw new Error("Failed to register user");
+  }
+};
+
+const insertUser = async (username, email, passwordHashed, avatarUrl) => {
+  try {
     const text =
       "INSERT INTO users(username, email, password, avatar) VALUES ($1, $2, $3, $4) RETURNING id, username, email, avatar, created_at";
     const values = [username, email, passwordHashed, avatarUrl];
 
     const result = await pool.query(text, values);
-
     return result.rows[0];
   } catch (err) {
-    // code for error of value duplicate in DB.
-    if (err.code === "23505") return 23505;
-    console.error("Error registering user:", err);
+    throw err;
   }
 };
 
 const findUserByOauthId = async (oauthId) => {
   try {
     const text = "SELECT * FROM users WHERE oauth_id = $1";
-    const value = [oauthId];
 
-    const result = await pool.query(text, value);
+    const result = await pool.query(text, [oauthId]);
     return result.rows[0];
   } catch (err) {
     console.error("Error finding user by oauthId:", err);
@@ -52,6 +62,29 @@ const registerByOAuth = async (data) => {
     const { oauthId, name, email, avatar } = data;
     const oauthProvider = "google";
     const username = name.split(" ")[0];
+
+    const user = await insertUserByOAuth(
+      username,
+      email,
+      oauthProvider,
+      oauthId,
+      avatar
+    );
+    return user;
+  } catch (err) {
+    console.error("Error registering user by OAuth:", err);
+    throw new Error("Error registering user by OAuth");
+  }
+};
+
+const insertUserByOAuth = async (
+  username,
+  email,
+  oauthProvider,
+  oauthId,
+  avatar
+) => {
+  try {
     const text =
       "INSERT INTO users (username, email, oauth_provider, oauth_id, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING *";
     const values = [username, email, oauthProvider, oauthId, avatar];
@@ -59,8 +92,7 @@ const registerByOAuth = async (data) => {
     const result = await pool.query(text, values);
     return result.rows[0];
   } catch (err) {
-    console.error("Error registering user by OAuth:", err);
-    throw new Error("Error registering user by OAuth");
+    throw err;
   }
 };
 
@@ -161,26 +193,14 @@ const updateAvatar = async (url, userId) => {
  */
 const sendEmailToResetPassword = async (emailProvided) => {
   try {
-    const text = "SELECT * FROM users WHERE email = $1";
-    const value = [emailProvided];
-    const result = await pool.query(text, value);
-    console.log(result.rows);
-
-    const userEmail = result.rows[0].email;
-    console.log(userEmail);
-
+    const userEmail = await verifyEmailExists(emailProvided);
     if (!userEmail) return null;
 
-    // Generate a reset token and set its expiration date (1 hour from now)
+    // Generate a reset token and set its expiration date (1 hour from generation time)
     const resetToken = createTokenReset();
-    const dateExpires = new Date(Date.now() + 3600000); // 1 hour
-    console.log(resetToken, typeof resetToken, dateExpires);
 
-    const text1 =
-      "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3";
-    const values1 = [resetToken, dateExpires, userEmail];
-
-    await pool.query(text1, values1);
+    const isUpdated = await updateResetPasswords(resetPassword, userEmail);
+    if (!isUpdated) return null;
 
     // Create the reset URL with the generated token
     const resetUrl = `localhost:3000/user/reset-password/${resetToken}`;
@@ -198,8 +218,37 @@ const sendEmailToResetPassword = async (emailProvided) => {
     await transporter.sendMail(mailOptions);
     return true;
   } catch (err) {
-    console.error("Error Send Email:", err);
-    throw new Error("Error Send Email");
+    console.error("Error sending email to reset password:", err);
+    throw new Error("Error sending email to reset password");
+  }
+};
+
+const verifyEmailExists = async (email) => {
+  try {
+    const text = "SELECT * FROM users WHERE email = $1";
+    const result = await pool.query(text, [email]);
+
+    if (result.rows.length === 0) return null;
+    return result.rows[0].email;
+  } catch (err) {
+    throw err;
+  }
+};
+
+const updateResetPasswords = async (resetToken, userEmail) => {
+  try {
+    const dateExpires = new Date(Date.now() + 3600000); // 1 hour
+    // console.log(resetToken, typeof resetToken, dateExpires);
+
+    const text =
+      "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3";
+    const values = [resetToken, dateExpires, userEmail];
+
+    const result = await pool.query(text, values);
+    if (result.rowCount === 0) return null;
+    return true;
+  } catch (err) {
+    throw err;
   }
 };
 
@@ -219,25 +268,48 @@ const sendEmailToResetPassword = async (emailProvided) => {
  */
 const resetPassword = async (newPassword, resetToken) => {
   try {
-    const text =
-      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()";
-    const value = [resetToken];
-
-    const result = await pool.query(text, value);
-    if (result.rowCount === 0) return null;
+    const tokenIsValid = await verifyExpirationToken(resetToken);
+    if (!tokenIsValid) return null;
 
     const passwordHashed = await bcrypt.hash(newPassword, 10);
 
-    const text1 =
-      "UPDATE users SET password = $1, reset_password_token = $2, reset_password_expires = $3 WHERE reset_password_token = $4";
-    const values1 = [passwordHashed, null, null, resetToken];
-
-    await pool.query(text1, values1);
+    const updatedPassword = await updateNewPassword(passwordHashed, resetToken);
+    if (!updatedPassword) return null;
 
     return true;
   } catch (err) {
-    console.error("Error password reset:", err);
-    throw new Error("Error password reset");
+    console.error("Error resetting password:", err);
+    throw new Error("Error resetting password");
+  }
+};
+
+const verifyExpirationToken = async (resetToken) => {
+  try {
+    // checks that the token has not expired
+    const text =
+      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()";
+
+    const result = await pool.query(text, [resetToken]);
+
+    if (result.rows.length === 0) return null;
+    return true;
+  } catch (err) {
+    throw err;
+  }
+};
+
+const updateNewPassword = async (passwordHashed, resetToken) => {
+  try {
+    const text =
+      "UPDATE users SET password = $1, reset_password_token = $2, reset_password_expires = $3 WHERE reset_password_token = $4";
+    const values = [passwordHashed, null, null, resetToken];
+
+    const result = await pool.query(text, values);
+
+    if (result.rowCount === 0) return null;
+    return true;
+  } catch (err) {
+    throw err;
   }
 };
 
@@ -282,10 +354,9 @@ const getAllDataUserByUserId = async (userId) => {
         u.id = $1
     GROUP BY
         u.id`;
-    const value = [userId];
 
-    const result = await pool.query(text, value);
-    if (result.rows[0].length === 0) return null;
+    const result = await pool.query(text, [userId]);
+    if (result.rows.length === 0) return null;
 
     return result.rows[0];
   } catch (err) {
@@ -297,9 +368,8 @@ const getAllDataUserByUserId = async (userId) => {
 const deleteAccount = async (userId) => {
   try {
     const text = "DELETE FROM users WHERE id = $1";
-    const value = [userId];
 
-    const result = await pool.query(text, value);
+    const result = await pool.query(text, [userId]);
     if (result.rowCount === 0) return null;
 
     return true;
@@ -311,6 +381,7 @@ const deleteAccount = async (userId) => {
 
 export default {
   register,
+  insertUser,
   findUserByOauthId,
   registerByOAuth,
   uploadToCloudinary,

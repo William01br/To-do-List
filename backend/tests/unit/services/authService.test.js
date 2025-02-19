@@ -76,8 +76,8 @@ describe("function Login of authService", () => {
     pool.query.mockRejectedValue(new Error("Database error"));
 
     await expect(
-      authService.getUserByEmail("test@example.com")
-    ).rejects.toThrow("Error getting user data by email");
+      authService.login("test@example.com", "password")
+    ).rejects.toThrow("Error when logging in user");
   });
 });
 
@@ -149,7 +149,7 @@ describe("function getAcessToken of authService", () => {
     pool.query.mockRejectedValue(new Error("Database error"));
 
     await expect(
-      authService.getRefreshTokenByUserId("invalidRefreshToken")
-    ).rejects.toThrow("Error getting refresh token by userId");
+      authService.getAcessToken("invalidRefreshToken", 1)
+    ).rejects.toThrow("Error getting acess token");
   });
 });

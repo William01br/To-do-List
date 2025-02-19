@@ -82,13 +82,18 @@ const getTokens = async (userId) => {
 };
 
 const login = async (email, password) => {
-  const user = await getUserByEmail(email);
-  if (!user || user.lenght === 0) return null;
+  try {
+    const user = await getUserByEmail(email);
+    if (!user || user.lenght === 0) return null;
 
-  const passwordMatch = await bcrypt.compare(password, user.password);
-  if (!passwordMatch) return null;
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) return null;
 
-  return user.id;
+    return user.id;
+  } catch (err) {
+    console.error("Error when logging in user", err);
+    throw new Error("Error when logging in user");
+  }
 };
 
 const getUserByEmail = async (email) => {
@@ -98,20 +103,27 @@ const getUserByEmail = async (email) => {
     const result = await pool.query(text, [email]);
     return result.rows[0];
   } catch (err) {
-    console.error("Error getting user data by email:", err);
-    throw new Error("Error getting user data by email");
+    throw err;
   }
 };
 
 // Receive a refresh token and creates a new acess token.
 const getAcessToken = async (refreshToken, userId) => {
-  const storedToken = await getRefreshTokenByUserId(userId);
-  if (!storedToken || storedToken.lenght === 0) return null;
+  try {
+    const storedToken = await getRefreshTokenByUserId(userId);
+    if (!storedToken || storedToken.lenght === 0) return null;
 
-  const isMatch = await bcrypt.compare(refreshToken, storedToken.refresh_token);
-  if (!isMatch) return null;
+    const isMatch = await bcrypt.compare(
+      refreshToken,
+      storedToken.refresh_token
+    );
+    if (!isMatch) return null;
 
-  return generateAcessToken(userId);
+    return generateAcessToken(userId);
+  } catch (err) {
+    console.error("Error getting acess token:", err);
+    throw new Error("Error getting acess token");
+  }
 };
 
 const getRefreshTokenByUserId = async (userId) => {
@@ -122,8 +134,7 @@ const getRefreshTokenByUserId = async (userId) => {
     const result = await pool.query(text, [userId]);
     return result.rows[0];
   } catch (err) {
-    console.error("Error getting refresh token by userId:", err);
-    throw new Error("Error getting refresh token by userId");
+    throw err;
   }
 };
 
