@@ -7,7 +7,6 @@ const createListDefault = async (userId) => {
     const values = ["Default List", userId, true];
 
     const result = await pool.query(text, values);
-    console.log(result);
     if (result.rowCount === 0) return null;
 
     return true;
@@ -24,7 +23,7 @@ const createList = async (listName, userId) => {
     const values = [listName, userId];
 
     const result = await pool.query(text, values);
-    if (result.rows[0].length === 0) return null;
+    if (result.rows.length === 0) return null;
 
     return result.rows[0];
   } catch (err) {
@@ -65,11 +64,9 @@ const getAllListsByUserId = async (userId) => {
       l.user_id = $1
     GROUP BY 
       l.id, l.name_list, l.created_at`;
-    const value = [userId];
 
-    const result = await pool.query(text, value);
+    const result = await pool.query(text, [userId]);
     if (result.rows.length === 0) return null;
-    console.log(result.rows);
 
     return result.rows;
   } catch (err) {
@@ -110,9 +107,8 @@ const getListByListId = async (listId) => {
       l.id = $1
     GROUP BY 
       l.id, l.name_list, l.created_at`;
-    const value = [listId];
 
-    const result = await pool.query(text, value);
+    const result = await pool.query(text, [listId]);
     if (result.rows.length === 0) return null;
 
     return result.rows[0];
@@ -129,7 +125,7 @@ const updateByListId = async (listId, userId, nameList) => {
     const values = [nameList, listId, userId, false];
 
     const result = await pool.query(text, values);
-    console.log(result);
+    // console.log(result);
     if (result.rowCount === 0) return null;
 
     return true;
@@ -145,7 +141,7 @@ const deleteListByListId = async (listId, userId) => {
     const values = [listId, userId, false];
 
     const result = await pool.query(text, values);
-    if (result.rowCount.length === 0) return null;
+    if (result.rowCount === 0) return null;
 
     return true;
   } catch (err) {
