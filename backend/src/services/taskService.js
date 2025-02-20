@@ -5,13 +5,10 @@ const verifyListExist = async (listId, userId) => {
     const text = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`;
     const values = [listId, userId];
 
-    const listExist = await pool.query(text, values);
-    if (!listExist) return null;
-
-    return listExist;
+    const result = await pool.query(text, values);
+    return result.rows[0].exists;
   } catch (err) {
-    console.error("Error verifying list existence:", err);
-    throw new Error("Failed to verify list existence");
+    throw err;
   }
 };
 
@@ -21,10 +18,8 @@ const getAllTasksByListId = async (listId, userId) => {
     if (!listExistence) return null;
 
     const text = `SELECT * FROM tasks WHERE list_id = $1`;
-    const value = [listId];
 
-    const result = await pool.query(text, value);
-    if (!result) return null;
+    const result = await pool.query(text, [listId]);
 
     return result.rows;
   } catch (err) {
@@ -59,8 +54,8 @@ const getTaskByTaskId = async (listId, taskId, userId) => {
     const values = [listId, taskId];
 
     const result = await pool.query(text, values);
-    console.log(result);
-    return result.rows;
+
+    return result.rows[0];
   } catch (err) {
     console.error("Error getting task by taskId:", err);
     throw new Error("Failed to get task by taskId");
@@ -89,7 +84,6 @@ const updateTaskByTaskId = async (
           completed = COALESCE($4, completed)
         WHERE list_id = $5 AND id = $6`;
     const values = [nameTask, comment, dueDate, completed, listId, taskId];
-    console.log(values);
 
     const result = await pool.query(text, values);
 
@@ -123,4 +117,5 @@ export default {
   getTaskByTaskId,
   updateTaskByTaskId,
   deleteTaskByTaskId,
+  verifyListExist,
 };
