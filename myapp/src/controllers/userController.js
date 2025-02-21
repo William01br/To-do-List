@@ -29,10 +29,7 @@ const register = async (req, res) => {
     if (err.message === "The email address is already registered")
       return res.status(409).json({ error: "conflict", message: err.message });
 
-    if (err.message.includes("Internal Server Error"))
-      return res.status(500).json({ message: err.message });
-
-    return res.status(400).json({ error: "Bad request", message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -77,28 +74,45 @@ const uploadImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "File required" });
 
-    const fileData = req.file;
     const userId = req.userId;
 
     // Upload file to cloudinary and return the url of the uploaded file.
-    const result = await userService.uploadToCloudinary(fileData);
-    if (!result)
-      return res.status(500).json({ message: "Internal Server Error" });
+    const url = await uploadFile(req.file);
 
     // Update the avatar in the database with the new url.
-    const resultDB = await userService.updateAvatar(result, userId);
-    if (!resultDB)
-      return res.status(500).json({ message: "Internal Server Error" });
+    await updateImage(url, userId);
 
     return res
       .status(200)
-      .json({ message: "avatar updated sucessfully", url: result });
+      .json({ message: "avatar updated sucessfully", url: url });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
 
-// validates the e-mail and sends an e-mail to the user with the URL to reset the password.
+const uploadFile = async (file) => {
+  try {
+    const result = await userService.uploadToCloudinary(file);
+
+    if (!result)
+      throw new Error("Internal Server Error at upload to Cloudinary");
+    return result;
+  } catch (err) {
+    throw err;
+  }
+};
+
+const updateImage = async (url, userId) => {
+  try {
+    const result = await userService.updateAvatar(url, userId);
+
+    if (!result) throw new Error("Internal Server Error while updating image");
+  } catch (err) {
+    throw err;
+  }
+};
+
+// checks the e-mail and sends an e-mail to the user with the URL to reset the password.
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -136,29 +150,53 @@ const resetPassword = async (req, res) => {
     const resetToken = req.params.token;
     const { newPassword } = req.body;
 
-    if (!newPassword || !resetToken)
-      return res
-        .status(400)
-        .json({ message: "Both token and password are required" });
+    await verifyData(newPassword, resetToken);
 
-    // verify if password is strong enough.
-    if (!isPasswordValid(newPassword))
-      return res.status(400).json({
-        message:
-          "password must contain uppercase letters, lowercase letters, numbers and at least 8 characters",
-      });
-
-    const result = await userService.resetPassword(newPassword, resetToken);
-    if (!result)
-      return res.status(500).json({ message: "Invalid or Expired token" });
+    await updatePassword(newPassword, resetToken);
 
     // Clear any authentication tokens stored in cookies
     res.clearCookie("acessToken");
     res.clearCookie("refreshToken");
 
-    return res.status(200).json({ message: "updated password sucessfully" });
+    return res.status(200).json({ message: "updated password successfully" });
   } catch (err) {
+    if (err.message === "Both token and password are required")
+      return res
+        .status(400)
+        .json({ error: "Bad request", message: err.message });
+
+    if (
+      err.message ===
+      "password must contain uppercase letters, lowercase letters, numbers and at least 8 characters"
+    )
+      return res
+        .status(400)
+        .json({ error: "Bad request", message: err.message });
+
     return res.status(500).json({ message: err.message });
+  }
+};
+
+const verifyData = (newPassword, resetToken) => {
+  try {
+    if (!newPassword || !resetToken)
+      throw new Error("Both token and password are required");
+
+    if (!isPasswordValid(newPassword))
+      throw new Error(
+        "password must contain uppercase letters, lowercase letters, numbers and at least 8 characters"
+      );
+  } catch (err) {
+    throw err;
+  }
+};
+
+const updatePassword = async (newPassword, resetToken) => {
+  try {
+    await userService.resetPassword(newPassword, resetToken);
+    if (!result) throw new Error("Invalid or Expired token");
+  } catch (err) {
+    throw err;
   }
 };
 
@@ -183,7 +221,7 @@ const deleteAccount = async (req, res) => {
     if (!result)
       return res
         .status(500)
-        .json({ message: "User not deleted", error: "Internal Server Error" });
+        .json({ error: "Internal Server Error", message: "User not deleted" });
 
     return res.status(200).json({ message: "User deleted successfully" });
   } catch (err) {
