@@ -1,0 +1,6 @@
+.env
+.env.test
+node_modules
+images_project
+info.txt
+coverage
