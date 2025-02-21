@@ -5,15 +5,20 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "NODE_ENV=test jest --runInBand",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
   "jest": {
-    "setupFilesAfterEnv": [
-      "rootDir>/tests/setup.js"
-    ],
     "testEnvironment": "node",
+    "setupFiles": [
+      "./tests/setupFiles.cjs"
+    ],
+    "setupFilesAfterEnv": [
+      "./tests/setupAfterEnv.js"
+    ],
+    "globalSetup": "./tests/globalSetup.js",
+    "globalTeardown": "./tests/globalTeardown.js",
     "coverageDirectory": "coverage",
     "collectCoverage": true,
     "testMatch": [
@@ -41,14 +46,14 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
-    "rebuild": "^0.1.2",
-    "supertest": "^7.0.0"
+    "rebuild": "^0.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.26.7",
     "@babel/preset-env": "^7.26.7",
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
+    "supertest": "^7.0.0",
     "nodemon": "^3.1.7"
   }
 }

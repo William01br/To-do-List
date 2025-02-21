@@ -1,10 +1,8 @@
-/*
- * File created to create the application's database tables
- */
+import { pool } from "../src/config/db.js";
 
-import { pool } from "./db.js";
-
-const user = `CREATE TABLE IF NOT EXISTS "users" (
+export default async () => {
+  console.log("Creating a test database");
+  await pool.query(`CREATE TABLE IF NOT EXISTS "users" (
   id SERIAL PRIMARY KEY,
   username VARCHAR(100) NOT NULL,
   email VARCHAR(100) NOT NULL UNIQUE,
@@ -14,26 +12,26 @@ const user = `CREATE TABLE IF NOT EXISTS "users" (
   avatar TEXT NOT NULL,
   reset_password_token TEXT,
   reset_password_expires TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW())`;
+  created_at TIMESTAMP DEFAULT NOW())`);
 
-const refreshTokens = `CREATE TABLE IF NOT EXISTS "refresh_tokens" (
+  await pool.query(`CREATE TABLE IF NOT EXISTS "refresh_tokens" (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   refresh_token TEXT NOT NULL,
   expires_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  revoked BOOLEAN DEFAULT FALSE)`;
+  revoked BOOLEAN DEFAULT FALSE)`);
 
-const list = `CREATE TABLE IF NOT EXISTS "lists" (
+  await pool.query(`CREATE TABLE IF NOT EXISTS "lists" (
   id SERIAL PRIMARY KEY ,
   name_list VARCHAR(100) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   user_id INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  is_protected BOOLEAN DEFAULT FALSE)`;
+  is_protected BOOLEAN DEFAULT FALSE)`);
 
-const task = `CREATE TABLE IF NOT EXISTS "tasks" (
+  await pool.query(`CREATE TABLE IF NOT EXISTS "tasks" (
   id SERIAL PRIMARY KEY,
   name_task VARCHAR(100) NOT NULL,
   completed BOOLEAN DEFAULT FALSE,
@@ -41,18 +39,5 @@ const task = `CREATE TABLE IF NOT EXISTS "tasks" (
   comment TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   list_id INTEGER NOT NULL,
-  FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE)`;
-
-const execute = async () => {
-  try {
-    await pool.query(user);
-    await pool.query(list);
-    await pool.query(task);
-    await pool.query(refreshTokens);
-  } catch (err) {
-    console.error("Error creating tables:", err.stack);
-    throw new Error("Error creating tables:", err.stack);
-  }
+  FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE)`);
 };
-
-export default execute;
