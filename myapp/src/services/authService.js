@@ -74,7 +74,7 @@ const getTokens = async (userId) => {
 
     await storeRefreshToken(userId, hashedRefreshToken);
 
-    return { acessToken: acessToken, refreshToken: refreshToken };
+    return { accessToken: acessToken, refreshToken: refreshToken };
   } catch (err) {
     console.error("Error creating tokens:", err);
     throw new Error("Failed to create tokens");
@@ -89,6 +89,7 @@ const login = async (email, password) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return null;
 
+    console.log(user.id);
     return user.id;
   } catch (err) {
     console.error("Error when logging in user", err);

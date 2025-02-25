@@ -78,6 +78,7 @@ const uploadImage = async (req, res) => {
 
     // Upload file to cloudinary and return the url of the uploaded file.
     const url = await uploadFile(req.file);
+    console.log(url);
 
     // Update the avatar in the database with the new url.
     await updateImage(url, userId);
@@ -160,14 +161,11 @@ const resetPassword = async (req, res) => {
 
     return res.status(200).json({ message: "updated password successfully" });
   } catch (err) {
-    if (err.message === "Both token and password are required")
-      return res
-        .status(400)
-        .json({ error: "Bad request", message: err.message });
-
     if (
       err.message ===
-      "password must contain uppercase letters, lowercase letters, numbers and at least 8 characters"
+        "password must contain uppercase letters, lowercase letters, numbers and at least 8 characters" ||
+      err.message === "Invalid or Expired token" ||
+      err.message === "Password are required"
     )
       return res
         .status(400)
@@ -177,10 +175,9 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const verifyData = (newPassword, resetToken) => {
+const verifyData = (newPassword) => {
   try {
-    if (!newPassword || !resetToken)
-      throw new Error("Both token and password are required");
+    if (!newPassword) throw new Error("Password are required");
 
     if (!isPasswordValid(newPassword))
       throw new Error(
@@ -193,7 +190,7 @@ const verifyData = (newPassword, resetToken) => {
 
 const updatePassword = async (newPassword, resetToken) => {
   try {
-    await userService.resetPassword(newPassword, resetToken);
+    const result = await userService.resetPassword(newPassword, resetToken);
     if (!result) throw new Error("Invalid or Expired token");
   } catch (err) {
     throw err;
@@ -203,9 +200,12 @@ const updatePassword = async (newPassword, resetToken) => {
 const getUserDataById = async (req, res) => {
   try {
     const userId = req.userId;
+
     const result = await userService.getAllDataUserByUserId(userId);
     if (!result)
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res
+        .status(400)
+        .json({ error: "Bad request", message: "User not found" });
 
     return res.status(200).json(result);
   } catch (err) {

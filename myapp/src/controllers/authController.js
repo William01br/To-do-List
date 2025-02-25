@@ -9,6 +9,7 @@ import { encrypt } from "../utils/crypto.js";
 
 const login = async (req, res) => {
   const { email, password } = req.body;
+  console.log(email, password);
 
   if (!email || !password)
     return res.status(400).json({ message: "email and password are required" });
@@ -21,15 +22,15 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
 
     // get Acess and Refresh tokens.
-    const result = await authService.getTokens(userId);
-    if (!result)
+    const tokens = await authService.getTokens(userId);
+    if (!tokens)
       return res.status(500).json({ message: "Internal Server Error" });
 
     // encrypting the tokens for send by cookies
-    const acessTokenEncrypted = encrypt(result.accessToken);
-    const refreshTokenEncrypted = encrypt(result.refreshToken);
+    const accessTokenEncrypted = encrypt(tokens.accessToken);
+    const refreshTokenEncrypted = encrypt(tokens.refreshToken);
 
-    res.cookie("acessToken", acessTokenEncrypted, {
+    res.cookie("acessToken", accessTokenEncrypted, {
       httpOnly: true,
       signed: true,
       sameSite: "strict",
@@ -47,6 +48,7 @@ const login = async (req, res) => {
 
     return res.status(200).json({ message: "Login sucessfully" });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: err.message });
   }
 };

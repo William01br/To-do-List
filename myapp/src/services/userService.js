@@ -4,13 +4,12 @@
  */
 
 import bcrypt from "bcrypt";
-import { v2 as cloudinary } from "cloudinary";
 
 import { pool } from "../config/db.js";
 import { bufferToStream } from "../utils/bufferToStream.js";
-import "../config/cloudinary.js";
 import { createTokenReset } from "../utils/crypto.js";
 import { transporter } from "../config/nodemailer.js";
+import { uploadFileToCloudinary, optimizeImage } from "./cloudinaryService.js";
 
 const register = async (username, email, password) => {
   const avatarUrl =
@@ -97,33 +96,6 @@ const insertUserByOAuth = async (
 };
 
 /**
- * Uploads a file to Cloudinary using a readable stream.
- *
- * This function takes a readable stream (e.g., from a file upload) and pipes it to Cloudinary's upload stream.
- * It returns a promise that resolves with the upload result or rejects with an error if the upload fails.
- *
- * @function uploadFileToCloudinary
- * @param {stream.Readable} readableStream - A readable stream containing the file data to be uploaded.
- * @returns {Promise<Object>} A promise that resolves with the Cloudinary upload result.
- * @throws {string} If an error occurs during the upload process, the promise is rejected with an error message.
- */
-function uploadFileToCloudinary(readableStream) {
-  return new Promise((resolve, reject) => {
-    const cloudinaryStream = cloudinary.uploader.upload_stream(
-      { resource_type: "auto" },
-      (error, result) => {
-        if (error) {
-          return reject("Error while uploading for cloudinary", error);
-        }
-        resolve(result);
-      }
-    );
-    // Pipe the readable stream to the Cloudinary upload stream
-    readableStream.pipe(cloudinaryStream);
-  });
-}
-
-/**
  * Uploads file data to Cloudinary and optimizes the uploaded image.
  *
  * This function takes file data, converts it to a readable stream, uploads it to Cloudinary,
@@ -138,25 +110,14 @@ function uploadFileToCloudinary(readableStream) {
  */
 const uploadToCloudinary = async (fileData) => {
   try {
+    // converts the Buffer file into a readable stream file that can be sent to cloudinary
     const readableStream = bufferToStream(fileData.buffer);
 
+    // Resolves the promise and return data of image uploaded in server.
     const result = await uploadFileToCloudinary(readableStream);
 
-    // otimizes the imagem
-    const url = cloudinary.url(result.secure_url, {
-      transformation: [
-        {
-          quality: "auto",
-          fecth_format: "auto",
-        },
-        {
-          width: 1200,
-          height: 1200,
-          crop: "fill",
-          gravity: "auto",
-        },
-      ],
-    });
+    // optimizes the imagem
+    const url = optimizeImage(result.secure_url);
     return url;
   } catch (err) {
     console.error("Error uploading image to cloudinary:", err);
@@ -169,8 +130,8 @@ const updateAvatar = async (url, userId) => {
     const text = "UPDATE users SET avatar = $1 WHERE id = $2";
     const values = [url, userId];
 
-    const resultQuery = await pool.query(text, values);
-    if (resultQuery.rowCount === 0) return null;
+    const result = await pool.query(text, values);
+    if (result.rowCount === 0) return null;
 
     return true;
   } catch (err) {
@@ -285,11 +246,13 @@ const resetPassword = async (newPassword, resetToken) => {
 
 const verifyExpirationToken = async (resetToken) => {
   try {
+    const dateNow = new Date(Date.now());
     // checks that the token has not expired
     const text =
-      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()";
+      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2";
+    const values = [resetToken, dateNow];
 
-    const result = await pool.query(text, [resetToken]);
+    const result = await pool.query(text, values);
 
     if (result.rows.length === 0) return null;
     return true;
@@ -367,6 +330,7 @@ const getAllDataUserByUserId = async (userId) => {
 
 const deleteAccount = async (userId) => {
   try {
+    // console.log(id);
     const text = "DELETE FROM users WHERE id = $1";
 
     const result = await pool.query(text, [userId]);
@@ -385,9 +349,12 @@ export default {
   findUserByOauthId,
   registerByOAuth,
   uploadToCloudinary,
+  uploadFileToCloudinary,
+  optimizeImage,
   updateAvatar,
   sendEmailToResetPassword,
   resetPassword,
+  updateResetPasswords,
   getAllDataUserByUserId,
   deleteAccount,
 };

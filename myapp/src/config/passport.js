@@ -1,8 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
-import userService from "../services/userService.js";
-
 passport.use(
   new GoogleStrategy(
     {
@@ -10,22 +8,15 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "http://localhost:3000/auth/google/callback",
     },
-    async (acessToken, refreshToken, profile, done) => {
-      try {
-        done(null, profile);
-      } catch (err) {
-        done(err, null);
-      }
+    (acessToken, refreshToken, profile, done) => {
+      return done(null, profile);
     }
   )
 );
 
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  done(null, user);
 });
-
-passport.deserializeUser(async (id, done) => {
-  await userService.findUserByOauthId(id, (err, user) => {
-    done(err, user);
-  });
+passport.deserializeUser((user, done) => {
+  done(null, user);
 });
