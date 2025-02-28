@@ -10,10 +10,10 @@ const createList = async (req, res) => {
 
     const result = await listService.createList(listName, userId);
     if (!result) {
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res.status(500).json({ message: "List not created" });
     }
 
-    return res.status(200).json(result);
+    return res.status(200).json({ data: result });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -25,10 +25,10 @@ const getAllLists = async (req, res) => {
 
     const result = await listService.getAllListsByUserId(userId);
     if (!result) {
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res.status(404).json({ message: "user not found" });
     }
 
-    return res.status(200).json(result);
+    return res.status(200).json({ data: result });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -43,7 +43,7 @@ const getListByListId = async (req, res) => {
     const result = await listService.getListByListId(listId);
     if (!result) return res.status(404).json({ message: "List not found" });
 
-    return res.status(200).json(result);
+    return res.status(200).json({ data: result });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
