@@ -10,6 +10,7 @@ import verifyExpirationToken from "../middleware/tokenRefreshMiddleware.js";
 
 // import all configs of passport
 import "../config/passport.js";
+import authenticateToken from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -45,6 +46,21 @@ router.get(
   loginByOAuth
 );
 
+/**
+ * Route to handle user login.
+ *
+ * @name POST /login
+ * @function
+ * @memberof module:routes/auth
+ * @param {string} path - The route path ("/login").
+ * @param {Function} middleware - The login handler function.
+ * @param {Object} req - The request object.
+ * @param {Object} req.body - The body of the request.
+ * @param {string} req.body.email - The user's email address.
+ * @param {string} req.body.password - The user's password.
+ * @param {Object} res - The response object.
+ * @returns {Object} A JSON response indicating the result of the login attempt.
+ */
 router.post("/login", login);
 
 /**
@@ -62,5 +78,7 @@ router.post("/login", login);
  * @returns {Object} Response object with a message confirming that the token have been sent via cookies.
  */
 router.post("/refresh-token", verifyExpirationToken, getAcessToken);
+
+router.get("/", (req, res) => res.send("login fail"));
 
 export default router;

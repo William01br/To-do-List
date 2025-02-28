@@ -20,7 +20,7 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import signature from "cookie-signature";
 
-import { app } from "../../src/app.js";
+import app from "../../src/app.js";
 import { pool } from "../../src/config/db.js";
 import { CustomError } from "../../src/utils/CustomError.js";
 import { encrypt } from "../../src/utils/crypto.js";
@@ -28,7 +28,6 @@ import {
   uploadFileToCloudinary,
   optimizeImage,
 } from "../../src/services/cloudinaryService.js";
-import { transporter } from "../../src/config/nodemailer.js";
 import userService from "../../src/services/userService.js";
 
 const _filename = fileURLToPath(import.meta.url);

@@ -30,16 +30,95 @@ const upload = multer();
 router.get("/", authenticateToken, getUserDataById);
 
 /**
- * Route to register a new user.
- * This route is protected by the `credentialsIsValid` middleware, which validates the user's credentials (username, email, and password).
- * If validation passes, the `register` function is called to create a new user account.
- *
- * @name Register User
- * @route {POST} /register
- * @middleware credentialsIsValid - Middleware to validate the user's credentials (username, email, and password).
- * @handler register - Function to create a new user account.
- *
- * @returns {Object} A JSON response indicating the success of the registration process and containing user data.
+ * @openapi
+ * /user/register:
+ *   post:
+ *     summary: Registra um novo usuário.
+ *     description: |
+ *       Registra um novo usuário com username, email e senha. O middleware valida se:
+ *       - Todos os campos (username, email e password) foram enviados.
+ *       - O email está em um formato válido.
+ *       - A senha contém letras maiúsculas, minúsculas, números e pelo menos 8 caracteres.
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: "john_doe"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@test.com"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "Password123"
+ *     responses:
+ *       200:
+ *         description: Usuário registrado com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "successfully registered"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: number
+ *                       example: 1
+ *                     username:
+ *                       type: string
+ *                       example: "john_doe"
+ *                     email:
+ *                       type: string
+ *                       example: "john.doe@test.com"
+ *       400:
+ *         description: Falha na validação dos campos (campos faltando ou com formato inválido).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "All fields needed be completed"
+ *       409:
+ *         description: Conflito - Email já está registrado.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "conflict"
+ *                 message:
+ *                   type: string
+ *                   example: "The email address is already registered"
+ *       500:
+ *         description: Erro interno do servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
  */
 router.post("/register", credentialsIsValid, register);
 

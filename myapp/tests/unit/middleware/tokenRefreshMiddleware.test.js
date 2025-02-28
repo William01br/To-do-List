@@ -47,7 +47,7 @@ describe("Token Refresh middleware", () => {
     expect(decrypt).toHaveBeenCalledWith("encrypted-token");
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
-      message: "Unexpected error",
+      error: "Unexpected error",
     });
     expect(next).not.toHaveBeenCalled();
   });

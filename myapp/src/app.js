@@ -2,14 +2,17 @@ import express from "express";
 import passport from "passport";
 import session from "express-session";
 import cookieParser from "cookie-parser";
+import swaggerUI from "swagger-ui-express";
+import morgan from "morgan";
 
+import { swaggerSpec } from "./swagger.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import listAndTaskRoutes from "./routes/list-task-Routes.js";
 import { notFound } from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorMiddleware.js";
 
-export const app = express();
+const app = express();
 
 app.use(
   session({
@@ -29,11 +32,20 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
+app.use(morgan("dev"));
+
+// app.use((req, res, next) => {
+//   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+//   next();
+// });
+
 app.use("/user", userRoutes);
 
 app.use("/auth", authRoutes);
 
 app.use("/lists", listAndTaskRoutes);
+
+app.use("/doc", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 app.use(errorHandler);
 

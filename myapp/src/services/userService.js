@@ -48,7 +48,12 @@ const findUserByOauthId = async (oauthId) => {
     const text = "SELECT * FROM users WHERE oauth_id = $1";
 
     const result = await pool.query(text, [oauthId]);
-    return result.rows[0];
+    if (result.rows.length === 0) return null;
+
+    const userId = result.rows[0].id;
+    const userData = await getAllDataUserByUserId(userId);
+
+    return { id: userId, data: userData };
   } catch (err) {
     console.error("Error finding user by oauthId:", err);
     throw new Error("Error finding user by oauthId");
@@ -58,18 +63,19 @@ const findUserByOauthId = async (oauthId) => {
 // function to save the user data that is registered by the OAuth provider.
 const registerByOAuth = async (data) => {
   try {
-    const { oauthId, name, email, avatar } = data;
-    const oauthProvider = "google";
+    const { oauthId, name, email, avatar, provider } = data;
     const username = name.split(" ")[0];
 
     const user = await insertUserByOAuth(
       username,
       email,
-      oauthProvider,
+      provider,
       oauthId,
       avatar
     );
-    return user;
+
+    const userData = await getAllDataUserByUserId(user.id);
+    return { id: user.id, data: userData };
   } catch (err) {
     console.error("Error registering user by OAuth:", err);
     throw new Error("Error registering user by OAuth");

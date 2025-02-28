@@ -115,7 +115,8 @@ describe("register by OAuth", () => {
 
     const result = await userService.registerByOAuth(fakeData);
 
-    expect(result).toBe(mockUser);
+    expect(result).toHaveProperty("id", 1);
+    expect(result).toHaveProperty("data");
   });
 
   it("should generate error if database fails", () => {

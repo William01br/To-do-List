@@ -231,6 +231,7 @@ const deleteAccount = async (req, res) => {
 
 export {
   register,
+  createDefaultlist,
   uploadImage,
   forgotPassword,
   resetPassword,

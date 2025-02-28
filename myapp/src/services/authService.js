@@ -46,8 +46,7 @@ const storeRefreshToken = async (userId, hashedRefreshToken) => {
 
     await pool.query(text, values);
   } catch (err) {
-    console.error("Error storing refresh token:", err);
-    throw new Error("Failed to store refresh token");
+    throw err;
   }
 };
 
@@ -89,7 +88,6 @@ const login = async (email, password) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return null;
 
-    console.log(user.id);
     return user.id;
   } catch (err) {
     console.error("Error when logging in user", err);
