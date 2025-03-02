@@ -4,7 +4,6 @@
  */
 
 import authService from "../services/authService.js";
-import { createDefaultlist } from "./userController.js";
 import userService from "../services/userService.js";
 import { encrypt } from "../utils/crypto.js";
 
@@ -136,7 +135,6 @@ const loginByOAuth = async (req, res) => {
         email: profile.emails[0].value,
         avatar: profile.photos[0].value,
       });
-      await createDefaultlist(user.id);
     }
     // get acess and refresh tokens
     const tokens = await authService.getTokens(user.id);

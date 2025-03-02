@@ -14,7 +14,7 @@ const getAllTasks = async (req, res) => {
 
     if (result.length === 0)
       return res.status(200).json({ tasks: [], message: "There are no tasks" });
-    return res.status(200).json(result);
+    return res.status(200).json({ data: result });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -45,7 +45,7 @@ const createTask = async (req, res) => {
   try {
     const { nameTask, comment, dueDate } = req.body;
     if (!nameTask || !comment || !dueDate)
-      return res.status(404).json({ message: "All fields are required" });
+      return res.status(400).json({ message: "All fields are required" });
 
     const listId = req.params.listId;
     if (!listId)
@@ -62,9 +62,9 @@ const createTask = async (req, res) => {
     );
     if (!result) return res.status(404).json({ message: "List not found" });
 
-    return res.status(200).json({ task: result });
+    return res.status(200).json({ data: result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -88,7 +88,7 @@ const getTaskByTaskId = async (req, res) => {
     if (result.length === 0)
       return res.status(404).json({ message: "Task not found" });
 
-    return res.status(200).json(result[0]);
+    return res.status(200).json({ data: result[0] });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -145,6 +145,8 @@ const updateTask = async (req, res) => {
         .status(400)
         .json({ message: "Is required update one field, at least" });
 
+    // return '0' if the task is not found. 0 === falsy.
+    // return 'null' if the list is not found.
     const result = await taskService.updateTaskByTaskId(
       listId,
       taskId,
@@ -155,14 +157,14 @@ const updateTask = async (req, res) => {
       userId
     );
 
-    if (!result) return res.status(404).json({ message: "List not found" });
+    if (result === null)
+      return res.status(404).json({ message: "List not found" });
 
-    if (result === 0)
-      return res.status(404).json({ message: "Task not found" });
+    if (!result) return res.status(404).json({ message: "Task not found" });
 
     return res.status(200).json({ message: "Task updated successfully" });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -179,9 +181,10 @@ const deleteTask = async (req, res) => {
 
     const result = await taskService.deleteTaskByTaskId(listId, taskId, userId);
 
-    if (!result) return res.status(404).json({ message: "List not found" });
+    if (result === null)
+      return res.status(404).json({ message: "List not found" });
 
-    if (result === 0)
+    if (!result)
       return res
         .status(404)
         .json({ message: "Task not found. Nothing was deleted" });

@@ -126,26 +126,7 @@ router.get("/:listId/tasks", authenticateToken, getAllTasks);
  * @route {GET} /:listId/tasks/:taskId
  * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
  * @handler {Function} getTaskByTaskId - The controller function to fetch a specific task by its ID.
- * @param {string} listId - The ID of the list to which the task belongs (provided as a URL parameterdescribe("when occurs any error", () => {
-    it("should status 500 and error message", async () => {
-      const login = await request(app).get("/auth/google/callback").expect(200);
-
-      const cookies = login.headers["set-cookie"];
-
-      const lists = await request(app).get("/lists/").set("Cookie", cookies);
-      console.log(lists.body);
-      const listId = lists.body.data[1].list_id;
-
-      jest.spyOn(pool, "query").mockRejectedValue(new Error("database error"));
-
-      const response = await request(app)
-        .delete(`/lists/remove/${listId}`)
-        .set("Cookie", cookies);
-
-      expect(response.body).toHaveProperty("message");
-      expect(response.status).toBe(500);
-    });
-  });).
+ * @param {string} listId - The ID of the list to which the task belongs (provided as a URL parameter
  * @param {string} taskId - The ID of the task to retrieve (provided as a URL parameter).
  * @returns {Object} A JSON response containing the task or an error message.
  */

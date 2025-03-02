@@ -49,13 +49,14 @@ const getTaskByTaskId = async (listId, taskId, userId) => {
   try {
     const listExistence = await verifyListExist(listId, userId);
     if (!listExistence) return null;
+    console.log("PASS");
 
     const text = `SELECT * FROM tasks WHERE list_id = $1 AND id = $2`;
     const values = [listId, taskId];
 
     const result = await pool.query(text, values);
 
-    return result.rows[0];
+    return result.rows;
   } catch (err) {
     console.error("Error getting task by taskId:", err);
     throw new Error("Failed to get task by taskId");
@@ -86,6 +87,7 @@ const updateTaskByTaskId = async (
     const values = [nameTask, comment, dueDate, completed, listId, taskId];
 
     const result = await pool.query(text, values);
+    console.log(result);
 
     return result.rowCount;
   } catch (err) {

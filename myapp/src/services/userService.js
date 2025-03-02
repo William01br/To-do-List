@@ -10,6 +10,7 @@ import { bufferToStream } from "../utils/bufferToStream.js";
 import { createTokenReset } from "../utils/crypto.js";
 import { transporter } from "../config/nodemailer.js";
 import { uploadFileToCloudinary, optimizeImage } from "./cloudinaryService.js";
+import { createDefaultlist } from "../controllers/userController.js";
 
 const register = async (username, email, password) => {
   const avatarUrl =
@@ -73,6 +74,8 @@ const registerByOAuth = async (data) => {
       oauthId,
       avatar
     );
+
+    await createDefaultlist(user.id);
 
     const userData = await getAllDataUserByUserId(user.id);
     return { id: user.id, data: userData };

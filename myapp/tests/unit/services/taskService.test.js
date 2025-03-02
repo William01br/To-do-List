@@ -174,15 +174,17 @@ describe("get task by id", () => {
   });
 
   it("should return a task", async () => {
-    const mockTask = {
-      id: 1,
-      name_task: "Task 1",
-      comment: "Task 1 comment",
-      due_date: "2022-12-31",
-      completed: false,
-    };
+    const mockTask = [
+      {
+        id: 1,
+        name_task: "Task 1",
+        comment: "Task 1 comment",
+        due_date: "2022-12-31",
+        completed: false,
+      },
+    ];
     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-    pool.query.mockResolvedValueOnce({ rows: [mockTask] });
+    pool.query.mockResolvedValueOnce({ rows: mockTask });
 
     const result = await taskService.getTaskByTaskId(1, 1);
 
