@@ -10,19 +10,22 @@ import verifyExpirationToken from "../middleware/tokenRefreshMiddleware.js";
 
 // import all configs of passport
 import "../config/passport.js";
-import authenticateToken from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 /**
- * Initiates Google OAuth authentication.
- * This route handler starts the Google OAuth process when a user navigates to this endpoint.
- *
- * @route GET /google
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware function.
- * @returns {void} This function doesn't return anything. It redirects the user to Google's authentication page.
+ * @swagger
+ * /auth/google:
+ *   get:
+ *     summary: Initiate Google OAuth authentication
+ *     description: >
+ *       This endpoint redirects the user to Google's login page using Passport's Google Strategy.
+ *       The requested scopes are "profile" and "email".
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       302:
+ *         description: Redirects the user to Google's authentication page.
  */
 router.get(
   "/google",
@@ -30,15 +33,32 @@ router.get(
 );
 
 /**
- * Handles the Google OAuth callback route.
- * This route is called by Google after a user has authenticated with their Google account.
- * It uses Passport to authenticate the user and then calls the loginByOAuth function to complete the login process.
- *
- * @route GET /google/callback
- * @param {string} path - The route path ("/google/callback")
- * @param {function} passportMiddleware - Passport authentication middleware for Google strategy
- * @param {function} loginByOAuth - Controller function to handle OAuth login
- * @returns {void} This route doesn't return a value directly, but triggers the authentication process
+ * @swagger
+ * /auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     description: >
+ *       This endpoint processes the callback after Google authentication.
+ *       It logs in the user (or registers them if they don't exist) using OAuth,
+ *       generates access and refresh tokens (which are sent via encrypted cookies),
+ *       and returns the user data in JSON format.
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: Successfully authenticated. Returns user data.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   $ref: "#/components/schemas/User"
+ *       401:
+ *         description: Authentication failed.
+ *       500:
+ *         description: Internal server error.
  */
 router.get(
   "/google/callback",
@@ -47,38 +67,119 @@ router.get(
 );
 
 /**
- * Route to handle user login.
- *
- * @name POST /login
- * @function
- * @memberof module:routes/auth
- * @param {string} path - The route path ("/login").
- * @param {Function} middleware - The login handler function.
- * @param {Object} req - The request object.
- * @param {Object} req.body - The body of the request.
- * @param {string} req.body.email - The user's email address.
- * @param {string} req.body.password - The user's password.
- * @param {Object} res - The response object.
- * @returns {Object} A JSON response indicating the result of the login attempt.
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Authenticate user and issue access and refresh tokens.
+ *     description: |
+ *       This endpoint allows a user to log in using their email and password.
+ *       If authentication is successful, access and refresh tokens are issued and stored in HTTP-only signed cookies.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "johndoe@example.com"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "SecurePassword123"
+ *     responses:
+ *       200:
+ *         description: Login successful. Tokens stored in cookies.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Login successfully"
+ *       400:
+ *         description: Missing email or password in the request body.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "email and password are required"
+ *       401:
+ *         description: Invalid credentials.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid credentials"
+ *       500:
+ *         description: Server error or token generation failure.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "tokens not sent"
  */
 router.post("/login", login);
 
 /**
- * Refreshes an access token using a valid refresh token.
- * This route is protected by middleware to ensure the refresh token is valid and not expired.
- * The new access token and refresh token are sent to the client via cookies.
- *
- * @route POST /refresh-token
- * @function
- * @memberof module:routes/auth
- * @param {string} path - The route path ("/refresh-token").
- * @param {Function[]} middleware - Middleware functions to execute before the route handler.
- * @param {Function} verifyExpirationToken - Middleware to verify if the refresh token is expired.
- * @param {Function} getAccessToken - Middleware to generate and set the new access token in cookies.
- * @returns {Object} Response object with a message confirming that the token have been sent via cookies.
+ * @swagger
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Endpoint to generate a new access token using the refresh token provided via a signed cookie.
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - refreshToken: []
+ *     responses:
+ *       200:
+ *         description: Access token successfully recovered and set in the cookie.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "acess Token recovered"
+ *       401:
+ *         description: Refresh token not found or expired.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "refresh token not found or expired"
+ *       500:
+ *         description: Internal server error or failure in creating the access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "access token not created"
  */
 router.post("/refresh-token", verifyExpirationToken, getAcessToken);
-
-router.get("/", (req, res) => res.send("login fail"));
 
 export default router;

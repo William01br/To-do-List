@@ -25,75 +25,222 @@ import authenticateToken from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /**
- * Route handler to fetch all lists for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `getAllLists` function to retrieve all lists associated with the authenticated user.
- *
- * @name Get All Lists
- * @route {GET} /
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} getAllLists - The controller function to fetch all lists.
- * @returns {Object} A JSON response containing the lists or an error message.
+ * @swagger
+ * /lists/:
+ *   get:
+ *     summary: Retrieve all lists for the authenticated user
+ *     description: >
+ *       This endpoint retrieves all lists associated with the authenticated user.
+ *       The authentication is performed via an access token sent in a signed cookie.
+ *     tags:
+ *       - List
+ *     security:
+ *       - AccessToken: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the lists.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: "#/components/schemas/List"
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: User not found.
+ *       500:
+ *         description: Internal server error.
  */
 router.get("/", authenticateToken, getAllLists);
 
 /**
- * Route handler to fetch a specific list by its ID for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `getListByListId` function to retrieve a specific list associated with the authenticated user.
- *
- * @name Get List by ID
- * @route {GET} /:listId
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} getListByListId - The controller function to fetch a specific list by its ID.
- * @param {string} listId - The ID of the list to retrieve (provided as a URL parameter).
- * @returns {Object} A JSON response containing the list or an error message.
+ * @swagger
+ * /lists/{listId}:
+ *   get:
+ *     summary: Retrieve a specific list by its ID
+ *     description: >
+ *       This endpoint retrieves a list by its ID for the authenticated user.
+ *       Authentication is done via an access token sent in a signed cookie.
+ *     tags:
+ *       - List
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the list to retrieve.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the list.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/List'
+ *       400:
+ *         description: Bad request - List ID is required.
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: List not found.
+ *       500:
+ *         description: Internal server error.
  */
 router.get("/:listId", authenticateToken, getListByListId);
 
 /**
- * Route handler to create a new list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `createList` function to create a new list associated with the authenticated user.
- *
- * @name Create List
- * @route {POST} /create
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} createList - The controller function to create a new list.
- * @returns {Object} A JSON response containing the created list or an error message.
+ * @swagger
+ * /lists/create:
+ *   post:
+ *     summary: Create a new list
+ *     description: >
+ *       This endpoint allows an authenticated user to create a new list.
+ *       Authentication is done via an access token sent in a signed cookie.
+ *     tags:
+ *       - List
+ *     security:
+ *       - AccessToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - listName
+ *             properties:
+ *               listName:
+ *                 type: string
+ *                 example: "Movies to watch"
+ *     responses:
+ *       200:
+ *         description: Successfully created the list.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/List'
+ *       400:
+ *         description: Bad request - List name is required.
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       500:
+ *         description: Internal server error.
  */
 router.post("/create", authenticateToken, createList);
 
 /**
- * Route handler to update an existing list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `updateList` function to update a specific list associated with the authenticated user.
- *
- * @name Update List
- * @route {PATCH} /update/:listId
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} updateList - The controller function to update an existing list.
- * @param {string} listId - The ID of the list to update (provided as a URL parameter).
- * @returns {Object} A JSON response containing the updated list or an error message.
+ * @swagger
+ * /lists/update/{listId}:
+ *   patch:
+ *     summary: Update a list by ID
+ *     description: >
+ *       This endpoint allows an authenticated user to update a list's name.
+ *       Authentication is required via an access token sent in a signed cookie.
+ *     tags:
+ *       - List
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the list to update.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - listName
+ *             properties:
+ *               listName:
+ *                 type: string
+ *                 example: "new name"
+ *     responses:
+ *       200:
+ *         description: List updated successfully.
+ *       400:
+ *         description: Bad request - List ID or name is missing.
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: Not found - List does not exist.
+ *       500:
+ *         description: Internal server error.
  */
 router.patch("/update/:listId", authenticateToken, updateList);
 
 /**
- * Route handler to delete an existing list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `deleteList` function to delete a specific list associated with the authenticated user.
- *
- * @name Delete List
- * @route {DELETE} /remove/:listId
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} deleteList - The controller function to delete an existing list.
- * @param {string} listId - The ID of the list to delete (provided as a URL parameter).
- * @returns {Object} A JSON response indicating the result of the operation or an error message.
+ * @swagger
+ * /lists/remove/{listId}:
+ *   delete:
+ *     summary: Delete a list by ID
+ *     description: >
+ *       This endpoint allows an authenticated user to delete a list.
+ *       Authentication is required via an access token sent in a signed cookie.
+ *     tags:
+ *       - List
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the list to delete.
+ *     responses:
+ *       200:
+ *         description: List deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "List deleted successfully"
+ *       400:
+ *         description: Bad request - List ID is missing.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "List Id is required"
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: Not found - List does not exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "List not found. Nothing was deleted"
+ *       500:
+ *         description: Internal server error.
  */
 router.delete("/remove/:listId", authenticateToken, deleteList);
 
@@ -102,80 +249,366 @@ router.delete("/remove/:listId", authenticateToken, deleteList);
  */
 
 /**
- * Route handler to fetch all tasks for a specific list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `getAllTasks` function to retrieve all tasks associated with a specific list and the authenticated user.
- *
- * @name Get All Tasks for a List
- * @route {GET} /:listId/tasks
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} getAllTasks - The controller function to fetch all tasks for a specific list.
- * @param {string} listId - The ID of the list for which tasks are to be retrieved (provided as a URL parameter).
- * @returns {Object} A JSON response containing the tasks or an error message.
+ * @swagger
+ * /lists/{listId}/tasks:
+ *   get:
+ *     summary: Get all tasks from a list
+ *     description: >
+ *       This endpoint retrieves all tasks associated with a given list ID.
+ *       Authentication is required via an access token sent in a signed cookie.
+ *     tags:
+ *       - Task
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the list whose tasks are being retrieved.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved tasks.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: "#/components/schemas/Task"
+ *                 message:
+ *                   type: string
+ *                   example: "There are no tasks"
+ *       400:
+ *         description: Bad request - List ID is missing.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "List Id is required"
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: Not found - List does not exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "List not found"
+ *       500:
+ *         description: Internal server error.
  */
 router.get("/:listId/tasks", authenticateToken, getAllTasks);
 
 /**
- * Route handler to fetch a specific task by its ID within a specific list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `getTaskByTaskId` function to retrieve a specific task associated with a specific list and the authenticated user.
- *
- * @name Get Task by ID
- * @route {GET} /:listId/tasks/:taskId
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} getTaskByTaskId - The controller function to fetch a specific task by its ID.
- * @param {string} listId - The ID of the list to which the task belongs (provided as a URL parameter
- * @param {string} taskId - The ID of the task to retrieve (provided as a URL parameter).
- * @returns {Object} A JSON response containing the task or an error message.
+ * @swagger
+ * /lists/{listId}/tasks/{taskId}:
+ *   get:
+ *     summary: Get a task by its ID
+ *     description: >
+ *       This endpoint retrieves a specific task by its ID from a specified list.
+ *       Authentication is required via an access token sent in a signed cookie.
+ *     tags:
+ *       - Task
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the list containing the task.
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the task to retrieve.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the task.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: "#/components/schemas/Task"
+ *       400:
+ *         description: Bad request - Missing required parameters.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "ListId and TaskId are required"
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: Not found - List or task does not exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error.
  */
 router.get("/:listId/tasks/:taskId", authenticateToken, getTaskByTaskId);
 
 /**
- * Route handler to create a new task within a specific list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `createTask` function to create a new task associated with a specific list and the authenticated user.
- *
- * @name Create Task
- * @route {POST} /:listId/tasks
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} createTask - The controller function to create a new task.
- * @param {string} listId - The ID of the list to which the task belongs (provided as a URL parameter).
- * @returns {Object} A JSON response containing the created task or an error message.
+ * @swagger
+ * /lists/{listId}/tasks:
+ *   post:
+ *     summary: Create a new task in a list
+ *     description: >
+ *       This endpoint allows users to create a new task in a specified list.
+ *       Authentication is required via an access token sent in a signed cookie.
+ *     tags:
+ *       - Task
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the list where the task will be created.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nameTask
+ *               - comment
+ *               - dueDate
+ *             properties:
+ *               nameTask:
+ *                 type: string
+ *                 description: The name of the task.
+ *                 example: "Buy groceries"
+ *               comment:
+ *                 type: string
+ *                 description: Additional comment or note for the task.
+ *                 example: "Remember to buy milk and eggs"
+ *               dueDate:
+ *                 type: string
+ *                 format: date
+ *                 description: The due date for the task.
+ *                 example: "2025-03-10"
+ *     responses:
+ *       200:
+ *         description: Successfully created the task.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: "#/components/schemas/Task"
+ *       400:
+ *         description: Bad request - Missing required fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "All fields are required"
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: Not found - List does not exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "List not found"
+ *       500:
+ *         description: Internal server error.
  */
 router.post("/:listId/tasks", authenticateToken, createTask);
 
 /**
- * Route handler to update a specific task within a specific list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `updateTask` function to update a specific task associated with a specific list and the authenticated user.
- *
- * @name Update Task
- * @route {PATCH} /:listId/tasks/:taskId
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} updateTask - The controller function to update a specific task.
- * @param {string} listId - The ID of the list to which the task belongs (provided as a URL parameter).
- * @param {string} taskId - The ID of the task to update (provided as a URL parameter).
- * @returns {Object} A JSON response containing the updated task or an error message.
+ * @swagger
+ * /lists/{listId}/tasks/{taskId}:
+ *   patch:
+ *     summary: Update a task by its ID
+ *     description: >
+ *       Updates one or more fields of a specific task within a list.
+ *       Authentication is required via an access token sent in a signed cookie.
+ *     tags:
+ *       - Task
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the list containing the task.
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the task to update.
+ *     requestBody:
+ *       description: JSON object containing the fields to update.
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nameTask:
+ *                 type: string
+ *                 description: The updated name of the task.
+ *                 example: "New task name"
+ *               comment:
+ *                 type: string
+ *                 description: The updated comment for the task.
+ *                 example: "Updated task comment"
+ *               dueDate:
+ *                 type: string
+ *                 format: date
+ *                 description: The updated due date for the task.
+ *                 example: "2025-03-10"
+ *               completed:
+ *                 type: boolean
+ *                 description: Marks the task as completed or not.
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Successfully updated the task.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task updated successfully"
+ *       400:
+ *         description: Bad request - Missing required parameters or no fields to update.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Is required update one field, at least"
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: Not found - List or task does not exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error.
  */
 router.patch("/:listId/tasks/:taskId", authenticateToken, updateTask);
 
 /**
- * Route handler to delete a specific task within a specific list for the authenticated user.
- *
- * This route requires authentication via the `authenticateToken` middleware.
- * It calls the `deleteTask` function to delete a specific task associated with a specific list and the authenticated user.
- *
- * @name Delete Task
- * @route {DELETE} /:listId/tasks/:taskId
- * @middleware {Function} authenticateToken - Middleware to verify the user's authentication token.
- * @handler {Function} deleteTask - The controller function to delete a specific task.
- * @param {string} listId - The ID of the list to which the task belongs (provided as a URL parameter).
- * @param {string} taskId - The ID of the task to delete (provided as a URL parameter).
- * @returns {Object} A JSON response indicating the result of the operation or an error message.
+ * @swagger
+ * /lists/{listId}/tasks/{taskId}:
+ *   delete:
+ *     summary: Delete a task by its ID
+ *     description: >
+ *       Deletes a specific task within a list.
+ *       Authentication is required via an access token sent in a signed cookie.
+ *     tags:
+ *       - Task
+ *     security:
+ *       - AccessToken: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the list containing the task.
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the task to delete.
+ *     responses:
+ *       200:
+ *         description: Successfully deleted the task.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task deleted successfully"
+ *       400:
+ *         description: Bad request - Missing required parameters.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "ListId and TaskId are required"
+ *       401:
+ *         description: Unauthorized - Access token not found or expired.
+ *       403:
+ *         description: Forbidden - Invalid token signature.
+ *       404:
+ *         description: Not found - List or task does not exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found. Nothing was deleted"
+ *       500:
+ *         description: Internal server error.
  */
 router.delete("/:listId/tasks/:taskId", authenticateToken, deleteTask);
 

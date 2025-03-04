@@ -1,0 +1,117 @@
+Crie uma JSDoc integrada ao swagger com bases nos códigos abaixo. Lembre-se que a autenticação é através do envio de cookies e que há um schema contendo a configuração do AccessToken que é necessário nesta rota. Além disso, há, também, um schema para o retorno dos dados da tarefa.
+
+
+```
+router.delete("/:listId/tasks/:taskId", authenticateToken, deleteTask);
+
+```
+
+```
+const authenticateToken = (req, res, next) => {
+  try {
+    // Extract the encrypted token from the signed cookies
+    const encryptedToken = req.signedCookies.acessToken;
+
+    if (!encryptedToken)
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: token not found or expired" });
+
+    // decrypt the token.
+    const decryptedToken = decrypt(encryptedToken);
+
+    const decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
+
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    console.error("auth middleware", err);
+    // if (err instanceof jwt.JsonWebTokenError)
+    if (err.name === "JsonWebTokenError")
+      return res.status(403).json({ message: "Invalid signature" });
+    return res.status(500).json({ message: err.message });
+  }
+};
+```
+
+```
+const deleteTask = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const listId = req.params.listId;
+    const taskId = req.params.taskId;
+
+    if (!listId || !taskId)
+      return res
+        .status(400)
+        .json({ message: "ListId and TaskId are required" });
+
+    const result = await taskService.deleteTaskByTaskId(listId, taskId, userId);
+
+    if (result === null)
+      return res.status(404).json({ message: "List not found" });
+
+    if (!result)
+      return res
+        .status(404)
+        .json({ message: "Task not found. Nothing was deleted" });
+
+    return res.status(200).json({ message: "Task deleted successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+```
+----------------------------------
+Crie uma JSDoc integrada ao swagger com bases nos códigos abaixo. Lembre-se que os tokens de acesso são enviados via cookies. 
+
+```
+router.delete("/remove-account", authenticateToken, deleteAccount);
+
+```
+
+```
+const authenticateToken = (req, res, next) => {
+  try {
+    // Extract the encrypted token from the signed cookies
+    const encryptedToken = req.signedCookies.acessToken;
+
+    if (!encryptedToken)
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: token not found or expired" });
+
+    // decrypt the token.
+    const decryptedToken = decrypt(encryptedToken);
+
+    const decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
+
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    console.error("auth middleware", err);
+    // if (err instanceof jwt.JsonWebTokenError)
+    if (err.name === "JsonWebTokenError")
+      return res.status(403).json({ message: "Invalid signature" });
+    return res.status(500).json({ message: err.message });
+  }
+};
+```
+
+```
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await userService.deleteAccount(userId);
+    if (!result)
+      return res
+        .status(500)
+        .json({ error: "Internal Server Error", message: "User not deleted" });
+
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+```

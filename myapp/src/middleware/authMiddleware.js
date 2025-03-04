@@ -42,6 +42,7 @@ const authenticateToken = (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (err) {
+    console.error("auth middleware", err);
     // if (err instanceof jwt.JsonWebTokenError)
     if (err.name === "JsonWebTokenError")
       return res.status(403).json({ message: "Invalid signature" });

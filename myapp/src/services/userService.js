@@ -167,9 +167,9 @@ const sendEmailToResetPassword = async (emailProvided) => {
     if (!userEmail) return null;
 
     // Generate a reset token and set its expiration date (1 hour from generation time)
-    const resetToken = createTokenReset();
+    const resetToken = await createTokenReset();
 
-    const isUpdated = await updateResetPasswords(resetPassword, userEmail);
+    const isUpdated = await updateResetPasswords(resetToken, userEmail);
     if (!isUpdated) return null;
 
     // Create the reset URL with the generated token
@@ -207,14 +207,17 @@ const verifyEmailExists = async (email) => {
 
 const updateResetPasswords = async (resetToken, userEmail) => {
   try {
+    console.log(resetToken);
     const dateExpires = new Date(Date.now() + 3600000); // 1 hour
     // console.log(resetToken, typeof resetToken, dateExpires);
+    console.log(dateExpires);
 
     const text =
       "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3";
     const values = [resetToken, dateExpires, userEmail];
 
     const result = await pool.query(text, values);
+    console.log(result.rowCount);
     if (result.rowCount === 0) return null;
     return true;
   } catch (err) {
@@ -255,13 +258,16 @@ const resetPassword = async (newPassword, resetToken) => {
 
 const verifyExpirationToken = async (resetToken) => {
   try {
+    console.log(resetToken);
     const dateNow = new Date(Date.now());
+    console.log(new Date(Date.now() + 3600000) > dateNow);
     // checks that the token has not expired
     const text =
       "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2";
     const values = [resetToken, dateNow];
 
     const result = await pool.query(text, values);
+    console.log(result.rows);
 
     if (result.rows.length === 0) return null;
     return true;

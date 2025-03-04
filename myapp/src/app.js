@@ -2,15 +2,15 @@ import express from "express";
 import passport from "passport";
 import session from "express-session";
 import cookieParser from "cookie-parser";
-import swaggerUI from "swagger-ui-express";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 
-import { swaggerSpec } from "./swagger.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import listAndTaskRoutes from "./routes/list-task-Routes.js";
 import { notFound } from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorMiddleware.js";
+import swaggerSpec from "./utils/swagger.js";
 
 const app = express();
 
@@ -45,7 +45,7 @@ app.use("/auth", authRoutes);
 
 app.use("/lists", listAndTaskRoutes);
 
-app.use("/doc", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(errorHandler);
 

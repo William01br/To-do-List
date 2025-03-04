@@ -207,7 +207,7 @@ const getUserDataById = async (req, res) => {
         .status(400)
         .json({ error: "Bad request", message: "User not found" });
 
-    return res.status(200).json(result);
+    return res.status(200).json({ data: result });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }

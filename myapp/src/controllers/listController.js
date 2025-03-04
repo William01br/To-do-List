@@ -37,6 +37,7 @@ const getAllLists = async (req, res) => {
 const getListByListId = async (req, res) => {
   try {
     const listId = req.params.listId;
+    console.log(typeof listId);
     if (!listId)
       return res.status(400).json({ message: "list Id is required" });
 

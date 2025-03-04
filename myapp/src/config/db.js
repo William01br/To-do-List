@@ -1,5 +1,7 @@
+const path = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ path });
+
 import pg from "pg";
 const { Pool } = pg;
 

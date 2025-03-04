@@ -10,7 +10,7 @@ beforeAll(async () => {
   await pool.query("SET session_replication_role = 'origin';");
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
 });
 
