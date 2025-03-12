@@ -27,6 +27,6 @@ tmp/
 # Outros arquivos que você não quer incluir na imagem
 Dockerfile*
 docker-compose.yml
-
 images_project
 info.txt
+test.txt

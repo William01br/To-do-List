@@ -1,5 +1,10 @@
+.clinic
+22267.0x
+clinic-output
+coverage
 .env
+.env.test
 node_modules
-test.txt
 images_project
 info.txt
+coverage

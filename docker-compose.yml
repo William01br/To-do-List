@@ -1,44 +1,49 @@
+networks:
+  shared_network: # Criamos uma rede para comunicação entre serviços
+    name: my_shared_network
+    driver: bridge
+
 services:
-  backend:
+  db:
+    image: postgres:17
+    container_name: myapp_db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: myapp_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - shared_network
+
+  db_test:
+    image: postgres:17
+    container_name: myapp_db_test
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: myusertest
+      POSTGRES_PASSWORD: postgrestest
+      POSTGRES_DB: myapp_test
+    tmpfs:
+      - /var/lib/postgresql/data # Prevents data persistence in tests
+
+  app:
     build:
-      context: ./backend
-    container_name: backend-api-To-do-list
+      context: .
+    container_name: myapp_api
+    restart: always
+    depends_on:
+      - db
     ports:
       - "3000:3000"
     volumes:
-      - ./backend:/app
+      - .:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=dbTest
-    depends_on:
-      - db
-    networks:
-      - app-network
-
-  db:
-    image: postgres:latest
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dbTest
-      TZ: America/Sao_Paulo
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
-  db_data:
-    driver: local
+  pgdata:
