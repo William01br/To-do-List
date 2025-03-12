@@ -24,7 +24,7 @@ import { decrypt } from "../utils/crypto.js";
  *                 - 403 Forbidden: If the token is invalid or has an invalid signature.
  *                 - 500 Internal Server Error: If an unexpected error occurs.
  */
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   try {
     // Extract the encrypted token from the signed cookies
     const encryptedToken = req.signedCookies.acessToken;
@@ -35,7 +35,7 @@ const authenticateToken = (req, res, next) => {
         .json({ message: "Unauthorized: token not found or expired" });
 
     // decrypt the token.
-    const decryptedToken = decrypt(encryptedToken);
+    const decryptedToken = await decrypt(encryptedToken);
 
     const decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
 

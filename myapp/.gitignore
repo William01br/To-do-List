@@ -1,3 +1,7 @@
+.clinic
+22267.0x
+clinic-output
+coverage
 .env
 .env.test
 node_modules

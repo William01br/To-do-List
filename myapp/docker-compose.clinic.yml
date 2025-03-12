@@ -1,0 +1,22 @@
+networks:
+  shared_network:
+    external: true
+
+services:
+  clinic-profiler:
+    build:
+      context: .
+      dockerfile: Dockerfile.clinic
+    container_name: clinic-profiler
+    volumes:
+      - ./clinic-output:/app/clinic-output # Monta um volume para salvar os logs do Clinic
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - shared_network
+
+  db:
+    networks:
+      - shared_network

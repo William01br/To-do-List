@@ -76,9 +76,10 @@ const getAllListsByUserId = async (userId) => {
 };
 
 const getListByListId = async (listId) => {
+  console.log(listId);
   try {
     const text = `
-    SELECT 
+    SELECT
     l.id AS list_id,
     l.name_list,
     l.created_at,

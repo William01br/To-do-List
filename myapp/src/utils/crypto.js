@@ -4,18 +4,59 @@
  */
 import crypto from "crypto";
 
-const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
-  modulusLength: 2048,
-});
+function generateKeysAsync() {
+  return new Promise((resolve, reject) => {
+    crypto.generateKeyPair(
+      "rsa",
+      {
+        modulusLength: 2048,
+        publicKeyEncoding: { type: "spki", format: "pem" },
+        privateKeyEncoding: { type: "pkcs8", format: "pem" },
+      },
+      (err, publicKey, privateKey) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve({ publicKey, privateKey });
+      }
+    );
+  });
+}
+
+let keys;
+
+async function Initkeys() {
+  try {
+    keys = await generateKeysAsync();
+  } catch (err) {
+    console.error("Failed to generate keys:", err);
+  }
+}
+Initkeys();
 
 export const encrypt = (value) => {
-  const encrypted = crypto.publicEncrypt(publicKey, Buffer.from(value));
+  if (!keys) {
+    throw new Error("The keys have not yet been initialized.");
+  }
+  const encrypted = crypto.publicEncrypt(keys.publicKey, Buffer.from(value));
   return encrypted.toString("base64");
 };
 export const decrypt = (encryptedValue) => {
+  if (!keys) {
+    throw new Error("The keys have not yet been initialized.");
+  }
   const encryptedBuffer = Buffer.from(encryptedValue, "base64");
-  const decrypted = crypto.privateDecrypt(privateKey, encryptedBuffer);
+  const decrypted = crypto.privateDecrypt(keys.privateKey, encryptedBuffer);
   return decrypted.toString();
 };
 
-export const createTokenReset = () => crypto.randomBytes(20).toString("hex");
+export function createTokenReset() {
+  return new Promise((resolve, rejects) => {
+    crypto.randomBytes(20, (err, buf) => {
+      if (err) {
+        rejects(err);
+      }
+      resolve(buf.toString("hex"));
+    });
+  });
+}
