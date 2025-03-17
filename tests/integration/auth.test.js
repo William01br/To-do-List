@@ -92,30 +92,17 @@ describe("POST /auth/login", () => {
   });
 });
 
-describe("POST /auth/refresh-token", () => {
+describe("GET /auth/refresh-token", () => {
   describe("when the refresh token is valid and sent correctly", () => {
     it("should return status 200 and the message 'acess Token recovered'", async () => {
-      await request(app)
-        .post("/user/register")
-        .send({
-          username: "william",
-          email: "williamtest@example.com",
-          password: "teste123Example",
-        })
-        .expect(200);
-
       const loginResponse = await request(app)
-        .post("/auth/login")
-        .send({
-          email: "williamtest@example.com",
-          password: "teste123Example",
-        })
+        .get("/auth/google/callback")
         .expect(200);
 
       const cookies = loginResponse.headers["set-cookie"];
 
       const response = await request(app)
-        .post("/auth/refresh-token")
+        .get("/auth/refresh-token")
         .set("Cookie", cookies);
 
       expect(response.status).toBe(200);
@@ -124,7 +111,7 @@ describe("POST /auth/refresh-token", () => {
   });
   describe("when the refresh token has expired or has not been sent", () => {
     it("should return status 401 and message 'refresh token not found or expired'", async () => {
-      const response = await request(app).post("/auth/refresh-token");
+      const response = await request(app).get("/auth/refresh-token");
 
       expect(response.status).toBe(401);
       expect(response.body).toHaveProperty(
@@ -135,21 +122,8 @@ describe("POST /auth/refresh-token", () => {
   });
   describe("when the access token is not created", () => {
     it("should return status 500 and message 'access token not created'", async () => {
-      await request(app)
-        .post("/user/register")
-        .send({
-          username: "william",
-          email: "test001@example.com",
-          password: "teste123Example",
-        })
-        .expect(200);
-
       const loginResponse = await request(app)
-        .post("/auth/login")
-        .send({
-          email: "test001@example.com",
-          password: "teste123Example",
-        })
+        .get("/auth/google/callback")
         .expect(200);
 
       const cookies = loginResponse.headers["set-cookie"];
@@ -157,7 +131,7 @@ describe("POST /auth/refresh-token", () => {
       jest.spyOn(authService, "getAcessToken").mockResolvedValue(null);
 
       const response = await request(app)
-        .post("/auth/refresh-token")
+        .get("/auth/refresh-token")
         .set("Cookie", cookies);
 
       expect(response.status).toBe(500);
@@ -169,21 +143,8 @@ describe("POST /auth/refresh-token", () => {
   });
   describe("when occurs any unexpected error", () => {
     it("should return status 500 and error message", async () => {
-      await request(app)
-        .post("/user/register")
-        .send({
-          username: "william",
-          email: "test002@example.com",
-          password: "teste123Example",
-        })
-        .expect(200);
-
       const loginResponse = await request(app)
-        .post("/auth/login")
-        .send({
-          email: "test002@example.com",
-          password: "teste123Example",
-        })
+        .get("/auth/google/callback")
         .expect(200);
 
       const cookies = loginResponse.headers["set-cookie"];
@@ -193,7 +154,7 @@ describe("POST /auth/refresh-token", () => {
         .mockRejectedValue(new Error("unexpected database error"));
 
       const response = await request(app)
-        .post("/auth/refresh-token")
+        .get("/auth/refresh-token")
         .set("Cookie", cookies);
 
       expect(response.status).toBe(500);
@@ -214,7 +175,7 @@ describe("OAuth with Passport (Google)", () => {
 
       // use the cookies for access protected route
       const response = await request(app)
-        .post("/auth/refresh-token")
+        .get("/auth/refresh-token")
         .set("Cookie", cookies);
 
       expect(response.status).toBe(200);

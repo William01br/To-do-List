@@ -6,11 +6,10 @@ import "../../src/config/passport.js";
 import app from "../../src/app.js";
 import listService from "../../src/services/listService.js";
 import { pool } from "../../src/config/db.js";
-import { encrypt } from "../../src/utils/crypto.js";
 
-const getSignedCookie = (encryptedToken) => {
+const getSignedCookie = (token) => {
   const signedToken =
-    "s:" + signature.sign(encryptedToken, process.env.COOKIE_PARSER_SECRET); // `s:` indicates signed cookie
+    "s:" + signature.sign(token, process.env.COOKIE_PARSER_SECRET); // `s:` indicates signed cookie
 
   // Create the cookie string manually (simulating an HTTP response cookie)
   return `acessToken=${signedToken}; Path=/; HttpOnly`;
@@ -76,8 +75,7 @@ describe("GET /lists/", () => {
         const token = jwt.sign({ userId: 0 }, "keyInvalid", {
           expiresIn: "1h",
         });
-        const encryptedToken = encrypt(token);
-        const cookieSigned = getSignedCookie(encryptedToken);
+        const cookieSigned = getSignedCookie(token);
 
         const response = await request(app)
           .get("/lists/")
@@ -160,8 +158,7 @@ describe("GET /lists/:listId", () => {
         const token = jwt.sign({ userId: 0 }, "keyInvalid", {
           expiresIn: "1h",
         });
-        const encryptedToken = encrypt(token);
-        const cookieSigned = getSignedCookie(encryptedToken);
+        const cookieSigned = getSignedCookie(token);
 
         const response = await request(app)
           .get(`/lists/${0}`)
@@ -266,8 +263,7 @@ describe("POST /lists/create", () => {
         const token = jwt.sign({ userId: 0 }, "keyInvalid", {
           expiresIn: "1h",
         });
-        const encryptedToken = encrypt(token);
-        const cookieSigned = getSignedCookie(encryptedToken);
+        const cookieSigned = getSignedCookie(token);
 
         const response = await request(app)
           .post(`/lists/create`)
@@ -386,8 +382,7 @@ describe("PATCH /lists/update/:listId", () => {
         const token = jwt.sign({ userId: 0 }, "keyInvalid", {
           expiresIn: "1h",
         });
-        const encryptedToken = encrypt(token);
-        const cookieSigned = getSignedCookie(encryptedToken);
+        const cookieSigned = getSignedCookie(token);
 
         const response = await request(app)
           .patch(`/lists/update/${0}`)
@@ -476,8 +471,7 @@ describe("DELETE /lists/remove/:listId", () => {
         const token = jwt.sign({ userId: 0 }, "keyInvalid", {
           expiresIn: "1h",
         });
-        const encryptedToken = encrypt(token);
-        const cookieSigned = getSignedCookie(encryptedToken);
+        const cookieSigned = getSignedCookie(token);
 
         const response = await request(app)
           .delete(`/lists/remove/${0}`)

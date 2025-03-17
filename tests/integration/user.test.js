@@ -23,7 +23,6 @@ import signature from "cookie-signature";
 import app from "../../src/app.js";
 import { pool } from "../../src/config/db.js";
 import { CustomError } from "../../src/utils/CustomError.js";
-import { encrypt } from "../../src/utils/crypto.js";
 import {
   uploadFileToCloudinary,
   optimizeImage,
@@ -35,17 +34,14 @@ const _dirname = dirname(_filename);
 const avatarUrl =
   "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
 
-const getEncryptedToken = (id) => {
-  const token = jwt.sign({ userId: id }, process.env.ACESS_TOKEN_SECRET, {
+const getToken = (id) =>
+  jwt.sign({ userId: id }, process.env.ACESS_TOKEN_SECRET, {
     expiresIn: "1h",
   });
 
-  return encrypt(token);
-};
-
-const getSignedCookie = (encryptedToken) => {
+const getSignedCookie = (token) => {
   const signedToken =
-    "s:" + signature.sign(encryptedToken, process.env.COOKIE_PARSER_SECRET); // `s:` indicates signed cookie
+    "s:" + signature.sign(token, process.env.COOKIE_PARSER_SECRET); // `s:` indicates signed cookie
 
   // Create the cookie string manually (simulating an HTTP response cookie)
   return `acessToken=${signedToken}; Path=/; HttpOnly`;
@@ -62,9 +58,9 @@ describe("GET /user/", () => {
           avatarUrl
         );
 
-        const encryptedToken = getEncryptedToken(createUser.id);
+        const token = getToken(createUser.id);
 
-        const signedCookie = getSignedCookie(encryptedToken);
+        const signedCookie = getSignedCookie(token);
 
         const response = await request(app)
           .get("/user/")
@@ -75,9 +71,9 @@ describe("GET /user/", () => {
     });
     describe("if the user does not exist", () => {
       it("should return status 400 and error 'Bad request' and message 'User not found'", async () => {
-        const encryptedToken = getEncryptedToken(0);
+        const token = getToken(0);
 
-        const signedCookie = getSignedCookie(encryptedToken);
+        const signedCookie = getSignedCookie(token);
 
         const response = await request(app)
           .get("/user/")
@@ -116,9 +112,7 @@ describe("GET /user/", () => {
           expiresIn: "1h",
         });
 
-        const encryptedToken = encrypt(token);
-
-        const signedCookie = getSignedCookie(encryptedToken);
+        const signedCookie = getSignedCookie(token);
 
         const response = await request(app)
           .post("/user/upload")
@@ -131,8 +125,8 @@ describe("GET /user/", () => {
   });
   describe("when occurs any unexpected error", () => {
     it("should return status 500 and the error message", async () => {
-      const encryptedToken = getEncryptedToken(1);
-      const signedCookie = getSignedCookie(encryptedToken);
+      const token = getToken(1);
+      const signedCookie = getSignedCookie(token);
 
       jest.spyOn(pool, "query").mockRejectedValue(new Error("Database error"));
 
@@ -258,9 +252,9 @@ describe("POST /user/upload", () => {
         avatarUrl
       );
 
-      const encryptedToken = getEncryptedToken(createUser.id);
+      const token = getToken(createUser.id);
 
-      const signedCookie = getSignedCookie(encryptedToken);
+      const signedCookie = getSignedCookie(token);
 
       uploadFileToCloudinary.mockResolvedValue({
         secure_url: "https://cloudinary.test/uploaded.jpg",
@@ -304,9 +298,7 @@ describe("POST /user/upload", () => {
           expiresIn: "1h",
         });
 
-        const encryptedToken = encrypt(token);
-
-        const signedCookie = getSignedCookie(encryptedToken);
+        const signedCookie = getSignedCookie(token);
 
         const response = await request(app)
           .post("/user/upload")
@@ -320,9 +312,9 @@ describe("POST /user/upload", () => {
 
   describe("when the user don't send the file", () => {
     it("should return status 400 and message 'File required'", async () => {
-      const encryptedToken = getEncryptedToken(1);
+      const token = getToken(1);
 
-      const signedCookie = getSignedCookie(encryptedToken);
+      const signedCookie = getSignedCookie(token);
 
       const response = await request(app)
         .post("/user/upload")
@@ -336,9 +328,9 @@ describe("POST /user/upload", () => {
 
   describe("when occurs any unexpected error", () => {
     it("should return status 500 and message with the error", async () => {
-      const encryptedToken = getEncryptedToken(1);
+      const token = getToken(1);
 
-      const signedCookie = getSignedCookie(encryptedToken);
+      const signedCookie = getSignedCookie(token);
 
       jest
         .spyOn(pool, "query")
@@ -527,8 +519,8 @@ describe("DELETE /user/remove-account", () => {
       );
       console.log(user.id);
 
-      const encryptedToken = getEncryptedToken(user.id);
-      const signedCookie = getSignedCookie(encryptedToken);
+      const token = getToken(user.id);
+      const signedCookie = getSignedCookie(token);
 
       const response = await request(app)
         .delete("/user/remove-account")
@@ -543,8 +535,8 @@ describe("DELETE /user/remove-account", () => {
   });
   describe("when the user is not deleted", () => {
     it("should return status 500 and message 'User not deleted'", async () => {
-      const encryptedToken = getEncryptedToken(0);
-      const signedCookie = getSignedCookie(encryptedToken);
+      const token = getToken(0);
+      const signedCookie = getSignedCookie(token);
 
       const response = await request(app)
         .delete("/user/remove-account")
@@ -563,8 +555,9 @@ describe("DELETE /user/remove-account", () => {
         avatarUrl
       );
 
-      const encryptedToken = getEncryptedToken(user.id);
-      const signedCookie = getSignedCookie(encryptedToken);
+      const token = getToken(user.id);
+      console.log(token);
+      const signedCookie = getSignedCookie(token);
 
       jest
         .spyOn(pool, "query")
