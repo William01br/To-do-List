@@ -8,9 +8,9 @@
     "test": "NODE_ENV=test jest --runInBand",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "doctor": "NODE_ENV=development clinic doctor -- node --trace-deprecation --trace-gc src/server.js",
-    "flame": "NODE_ENV=development clinic flame -- node --trace-sync-io src/server.js",
-    "bubbleprof": "NODE_ENV=development clinic bubbleprof --autocannon -- node src/server.js"
+    "doctor": "NODE_ENV=test clinic doctor -- node --trace-deprecation --trace-gc src/server.js",
+    "flame": "NODE_ENV=test clinic flame -- node --trace-sync-io src/server.js",
+    "bubbleprof": "NODE_ENV=test clinic bubbleprof --autocannon -- node src/server.js"
   },
   "jest": {
     "testEnvironment": "node",

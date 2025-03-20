@@ -4,7 +4,6 @@
  */
 
 import jwt from "jsonwebtoken";
-import { decrypt } from "../utils/crypto.js";
 
 /**
  * Middleware to authenticate a user using an encrypted access token stored in a signed cookie.
@@ -24,25 +23,21 @@ import { decrypt } from "../utils/crypto.js";
  *                 - 403 Forbidden: If the token is invalid or has an invalid signature.
  *                 - 500 Internal Server Error: If an unexpected error occurs.
  */
-const authenticateToken = async (req, res, next) => {
+const authenticateToken = (req, res, next) => {
   try {
-    // Extract the encrypted token from the signed cookies
-    const encryptedToken = req.signedCookies.acessToken;
+    // Extract the token from the signed cookies
+    const token = req.signedCookies.acessToken;
 
-    if (!encryptedToken)
+    if (!token)
       return res
         .status(401)
         .json({ message: "Unauthorized: token not found or expired" });
 
-    // decrypt the token.
-    const decryptedToken = await decrypt(encryptedToken);
-
-    const decoded = jwt.verify(decryptedToken, process.env.ACESS_TOKEN_SECRET);
+    const decoded = jwt.verify(token, process.env.ACESS_TOKEN_SECRET);
 
     req.userId = decoded.userId;
     next();
   } catch (err) {
-    console.error("auth middleware", err);
     // if (err instanceof jwt.JsonWebTokenError)
     if (err.name === "JsonWebTokenError")
       return res.status(403).json({ message: "Invalid signature" });

@@ -21,6 +21,7 @@ import {
   deleteTask,
 } from "../controllers/taskController.js";
 import authenticateToken from "../middleware/authMiddleware.js";
+import { getAllDataPagination } from "../middleware/PaginationMiddleware.js";
 
 const router = express.Router();
 
@@ -55,7 +56,16 @@ const router = express.Router();
  *       500:
  *         description: Internal server error.
  */
-router.get("/", authenticateToken, getAllLists);
+router.get(
+  "/",
+  authenticateToken,
+  (req, res, next) => {
+    req.routePagination = "getAllLists";
+    next();
+  },
+  getAllDataPagination,
+  getAllLists
+);
 
 /**
  * @swagger
@@ -94,7 +104,16 @@ router.get("/", authenticateToken, getAllLists);
  *       500:
  *         description: Internal server error.
  */
-router.get("/:listId", authenticateToken, getListByListId);
+router.get(
+  "/:listId",
+  authenticateToken,
+  (req, res, next) => {
+    req.routePagination = "getListById";
+    next();
+  },
+  getAllDataPagination,
+  getListByListId
+);
 
 /**
  * @swagger
@@ -309,7 +328,16 @@ router.delete("/remove/:listId", authenticateToken, deleteList);
  *       500:
  *         description: Internal server error.
  */
-router.get("/:listId/tasks", authenticateToken, getAllTasks);
+router.get(
+  "/:listId/tasks",
+  authenticateToken,
+  (req, res, next) => {
+    req.routePagination = "routeTask";
+    next();
+  },
+  getAllDataPagination,
+  getAllTasks
+);
 
 /**
  * @swagger

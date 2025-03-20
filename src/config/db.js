@@ -1,6 +1,14 @@
-const path = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
 import dotenv from "dotenv";
-dotenv.config({ path });
+import { dirname } from "path";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const _filename = fileURLToPath(import.meta.url);
+const _dirname = dirname(_filename);
+
+const env = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
+
+dotenv.config({ path: path.resolve(_dirname, `../../${env}`) });
 
 import pg from "pg";
 const { Pool } = pg;

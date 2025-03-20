@@ -1,11 +1,7 @@
 import jwt from "jsonwebtoken";
 
 import authenticateToken from "../../../src/middleware/authMiddleware";
-import { decrypt } from "../../../src/utils/crypto";
 
-jest.mock("../../../src/utils/crypto.js", () => ({
-  decrypt: jest.fn(),
-}));
 jest.mock("jsonwebtoken", () => ({
   verify: jest.fn(),
   JsonWebTokenError: jest.requireActual("jsonwebtoken").JsonWebTokenError,
@@ -27,8 +23,8 @@ describe("Authentication middleware", () => {
     jest.clearAllMocks();
   });
 
-  it("should return 401 if token is not found in signed cookies", async () => {
-    await authenticateToken(req, res, next);
+  it("should return 401 if token is not found in signed cookies", () => {
+    authenticateToken(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
@@ -37,18 +33,16 @@ describe("Authentication middleware", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("should return 403 if token is invalid", async () => {
-    req.signedCookies.acessToken = "encrypted-token";
-    decrypt.mockReturnValue("decrypted-token");
+  it("should return 403 if token is invalid", () => {
+    req.signedCookies.acessToken = "token";
     jwt.verify.mockImplementation(() => {
       throw new jwt.JsonWebTokenError("invalid token");
     });
 
-    await authenticateToken(req, res, next);
+    authenticateToken(req, res, next);
 
-    expect(decrypt).toHaveBeenCalledWith("encrypted-token");
     expect(jwt.verify).toHaveBeenCalledWith(
-      "decrypted-token",
+      "token",
       process.env.ACESS_TOKEN_SECRET
     );
     expect(res.status).toHaveBeenCalledWith(403);
@@ -56,15 +50,14 @@ describe("Authentication middleware", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("should return 500 if an unexpected error occurs", async () => {
-    req.signedCookies.acessToken = "encrypted-token";
-    decrypt.mockImplementation(() => {
+  it("should return 500 if an unexpected error occurs", () => {
+    req.signedCookies.acessToken = "token";
+    jwt.verify.mockImplementation(() => {
       throw new Error("Unexpected error");
     });
 
-    await authenticateToken(req, res, next);
+    authenticateToken(req, res, next);
 
-    expect(decrypt).toHaveBeenCalledWith("encrypted-token");
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       message: "Unexpected error",
@@ -72,16 +65,14 @@ describe("Authentication middleware", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("should call next() if token is valid", async () => {
-    req.signedCookies.acessToken = "encrypted-token";
-    decrypt.mockReturnValue("decrypted-token");
+  it("should call next() if token is valid", () => {
+    req.signedCookies.acessToken = "token";
     jwt.verify.mockReturnValue({ userId: 1 });
 
-    await authenticateToken(req, res, next);
+    authenticateToken(req, res, next);
 
-    expect(decrypt).toHaveBeenCalledWith("encrypted-token");
     expect(jwt.verify).toHaveBeenCalledWith(
-      "decrypted-token",
+      "token",
       process.env.ACESS_TOKEN_SECRET
     );
     expect(req.userId).toBe(1);

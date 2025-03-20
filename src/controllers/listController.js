@@ -22,13 +22,15 @@ const createList = async (req, res) => {
 const getAllLists = async (req, res) => {
   try {
     const userId = req.userId;
+    const { nextUrl, previousUrl, limit, offset } = req.dataPagination;
 
-    const result = await listService.getAllListsByUserId(userId);
+    console.log("controler - limite/offset:", limit, offset);
+    const result = await listService.getAllListsByUserId(userId, limit, offset);
     if (!result) {
       return res.status(404).json({ message: "user not found" });
     }
 
-    return res.status(200).json({ data: result });
+    return res.status(200).json({ nextUrl, previousUrl, data: result });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -37,14 +39,15 @@ const getAllLists = async (req, res) => {
 const getListByListId = async (req, res) => {
   try {
     const listId = req.params.listId;
-    console.log(typeof listId);
+    const { nextUrl, previousUrl, limit, offset } = req.dataPagination;
+
     if (!listId)
       return res.status(400).json({ message: "list Id is required" });
 
-    const result = await listService.getListByListId(listId);
+    const result = await listService.getListByListId(listId, limit, offset);
     if (!result) return res.status(404).json({ message: "List not found" });
 
-    return res.status(200).json({ data: result });
+    return res.status(200).json({ nextUrl, previousUrl, data: result });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }

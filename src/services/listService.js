@@ -1,5 +1,18 @@
 import { pool } from "../config/db.js";
 
+const getCountListsByUserId = async (userId) => {
+  try {
+    const text = "SELECT COUNT(*) FROM lists WHERE user_id = $1";
+    const values = [userId];
+
+    const result = await pool.query(text, values);
+    return Number(result.rows[0].count);
+  } catch (err) {
+    console.error("error counting lists:", err);
+    throw err;
+  }
+};
+
 const createListDefault = async (userId) => {
   try {
     const text =
@@ -32,7 +45,7 @@ const createList = async (listName, userId) => {
   }
 };
 
-const getAllListsByUserId = async (userId) => {
+const getAllListsByUserId = async (userId, limit, offset) => {
   try {
     const text = `
     SELECT 
@@ -63,9 +76,15 @@ const getAllListsByUserId = async (userId) => {
     WHERE 
       l.user_id = $1
     GROUP BY 
-      l.id, l.name_list, l.created_at`;
+      l.id, l.name_list, l.created_at
+    ORDER BY 
+      l.created_at DESC
+    LIMIT $2 OFFSET $3`;
 
-    const result = await pool.query(text, [userId]);
+    console.log("funcao banco", limit, offset);
+    const values = [userId, limit, offset];
+    const result = await pool.query(text, values);
+    console.log(result.rows);
     if (result.rows.length === 0) return null;
 
     return result.rows;
@@ -75,41 +94,27 @@ const getAllListsByUserId = async (userId) => {
   }
 };
 
-const getListByListId = async (listId) => {
-  console.log(listId);
+const getListByListId = async (listId, limit, offset) => {
   try {
     const text = `
-    SELECT
-    l.id AS list_id,
-    l.name_list,
-    l.created_at,
-    COALESCE(
-        ARRAY_AGG(
-            CASE 
-                WHEN t.id IS NOT NULL AND t.name_task IS NOT NULL THEN
-                    JSON_BUILD_OBJECT(
-                        'task_id', t.id,
-                        'task_name', t.name_task,
-                        'task_description', t.comment,
-                        'task_due_date', t.due_date,
-                        'task_finished', t.completed,
-                        'task_created_at', t.created_at
-                    )
-                ELSE NULL
-            END
-            ORDER BY t.created_at
-        ), '{}'
-    ) AS tasks
-    FROM 
-      lists l
-    LEFT JOIN 
-      tasks t ON l.id = t.list_id
-    WHERE 
-      l.id = $1
-    GROUP BY 
-      l.id, l.name_list, l.created_at`;
+    SELECT 
+        l.id AS list_id,
+        l.name_list AS list_name,
+        l.created_at,
+        COALESCE(JSON_AGG(t) FILTER (WHERE t.id IS NOT NULL), '[]') AS tasks
+      FROM lists l
+      LEFT JOIN (
+        SELECT *
+        FROM tasks
+        WHERE list_id = $1
+        ORDER BY id
+        LIMIT $2 OFFSET $3
+      ) t ON t.list_id = l.id
+      WHERE l.id = $1
+      GROUP BY l.id`;
+    const values = [listId, limit, offset];
 
-    const result = await pool.query(text, [listId]);
+    const result = await pool.query(text, values);
     if (result.rows.length === 0) return null;
 
     return result.rows[0];
@@ -158,4 +163,5 @@ export default {
   getListByListId,
   updateByListId,
   deleteListByListId,
+  getCountListsByUserId,
 };

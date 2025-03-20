@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import { decrypt } from "../utils/crypto.js";
 
 /**
  * Middleware to verify the expiration and validity of a refresh token stored in a signed cookie.
@@ -21,24 +20,19 @@ import { decrypt } from "../utils/crypto.js";
  */
 const verifyExpirationToken = (req, res, next) => {
   try {
-    // Extract the encrypted token from the signed cookies.
+    // Extract the token from the signed cookies.
     const refreshToken = req.signedCookies.refreshToken;
+    console.log(refreshToken);
 
     if (!refreshToken)
       return res
         .status(401)
         .json({ message: "refresh token not found or expired" });
 
-    // Decrypting the refresh token recovered by cookies
-    const decryptedRefreshToken = decrypt(refreshToken);
-
-    const decoded = jwt.verify(
-      decryptedRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     req.userId = decoded.userId;
-    req.refreshToken = decryptedRefreshToken;
+    req.refreshToken = refreshToken;
     next();
   } catch (err) {
     return res.status(500).json({ error: err.message });

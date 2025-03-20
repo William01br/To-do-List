@@ -5,7 +5,6 @@
 
 import authService from "../services/authService.js";
 import userService from "../services/userService.js";
-import { encrypt } from "../utils/crypto.js";
 
 /**
  * Handles user login by validating credentials, generating tokens, and setting cookies.
@@ -38,11 +37,7 @@ const login = async (req, res) => {
     if (!tokens.accessToken || !tokens.refreshToken)
       return res.status(500).json({ message: "tokens not sent" });
 
-    // encrypting the tokens for send by cookies
-    const accessTokenEncrypted = encrypt(tokens.accessToken);
-    const refreshTokenEncrypted = encrypt(tokens.refreshToken);
-
-    res.cookie("acessToken", accessTokenEncrypted, {
+    res.cookie("acessToken", tokens.accessToken, {
       httpOnly: true,
       signed: true,
       sameSite: "strict",
@@ -50,7 +45,7 @@ const login = async (req, res) => {
       maxAge: 1440000, // 1h
     });
 
-    res.cookie("refreshToken", refreshTokenEncrypted, {
+    res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       signed: true,
       secure: false,
@@ -87,10 +82,7 @@ const getAcessToken = async (req, res) => {
     if (!accessToken)
       return res.status(500).json({ message: "access token not created" });
 
-    // encrypting the token for send by cookies
-    const acessTokenEncrypted = encrypt(accessToken);
-
-    res.cookie("acessToken", acessTokenEncrypted, {
+    res.cookie("acessToken", accessToken, {
       httpOnly: true,
       signed: true,
       sameSite: "strict",
@@ -139,11 +131,7 @@ const loginByOAuth = async (req, res) => {
     // get acess and refresh tokens
     const tokens = await authService.getTokens(user.id);
 
-    // encrpyt the tokens for will be send by cookies
-    const encryptedAcessToken = encrypt(tokens.accessToken);
-    const encryptedRefreshToken = encrypt(tokens.refreshToken);
-
-    res.cookie("acessToken", encryptedAcessToken, {
+    res.cookie("acessToken", tokens.accessToken, {
       httpOnly: true,
       signed: true,
       sameSite: "strict",
@@ -151,7 +139,7 @@ const loginByOAuth = async (req, res) => {
       maxAge: 1440000, // 1h
     });
 
-    res.cookie("refreshToken", encryptedRefreshToken, {
+    res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       signed: true,
       secure: false,

@@ -299,39 +299,11 @@ const getAllDataUserByUserId = async (userId) => {
     u.username,
     u.email,
     u.avatar,
-    u.created_at,
-    ARRAY_AGG(
-        JSON_BUILD_OBJECT(
-            'list_id', l.id,
-            'list_name', l.name_list,
-            'list_created_at', l.created_at,
-            'list_is_protected', l.is_protected,
-            'tasks', (
-                SELECT COALESCE(ARRAY_AGG(
-                    JSON_BUILD_OBJECT(
-                        'task_id', t.id,
-                        'task_title', t.name_task,
-                        'task_description', t.comment,
-                        'task_due_date', t.due_date,
-                        'task_finished', t.completed,
-                        'task_created_at', t.created_at
-                    )
-                    ORDER BY t.created_at
-                ), '{}')
-                FROM tasks t
-                WHERE t.list_id = l.id
-            )
-        )
-        ORDER BY l.created_at
-    ) AS lists
+    u.created_at
     FROM
         users u
-    LEFT JOIN
-        lists l ON u.id = l.user_id
     WHERE 
-        u.id = $1
-    GROUP BY
-        u.id`;
+        u.id = $1;`;
 
     const result = await pool.query(text, [userId]);
     if (result.rows.length === 0) return null;

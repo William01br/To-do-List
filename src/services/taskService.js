@@ -1,5 +1,17 @@
 import { pool } from "../config/db.js";
 
+const getCountTasksByListId = async (listId) => {
+  try {
+    const text = `SELECT COUNT(*) FROM tasks WHERE list_id = $1`;
+
+    const result = await pool.query(text, [listId]);
+    return Number(result.rows[0].count);
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+};
+
 const verifyListExist = async (listId, userId) => {
   try {
     const text = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`;
@@ -12,14 +24,20 @@ const verifyListExist = async (listId, userId) => {
   }
 };
 
-const getAllTasksByListId = async (listId, userId) => {
+const getAllTasksByListId = async (listId, userId, limit, offset) => {
   try {
     const listExistence = await verifyListExist(listId, userId);
     if (!listExistence) return null;
 
-    const text = `SELECT * FROM tasks WHERE list_id = $1`;
+    const text = `
+      SELECT * 
+        FROM tasks 
+        WHERE list_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3`;
+    const values = [listId, limit, offset];
 
-    const result = await pool.query(text, [listId]);
+    const result = await pool.query(text, values);
 
     return result.rows;
   } catch (err) {
@@ -120,4 +138,5 @@ export default {
   updateTaskByTaskId,
   deleteTaskByTaskId,
   verifyListExist,
+  getCountTasksByListId,
 };

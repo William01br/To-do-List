@@ -141,7 +141,7 @@ router.post("/login", login);
 /**
  * @swagger
  * /auth/refresh-token:
- *   post:
+ *   get:
  *     summary: Refresh access token
  *     description: Endpoint to generate a new access token using the refresh token provided via a signed cookie.
  *     tags:
@@ -180,6 +180,6 @@ router.post("/login", login);
  *                   type: string
  *                   example: "access token not created"
  */
-router.post("/refresh-token", verifyExpirationToken, getAcessToken);
+router.get("/refresh-token", verifyExpirationToken, getAcessToken);
 
 export default router;
