@@ -4,9 +4,9 @@ import axios from "axios";
 async function registerUser() {
   try {
     await axios.post("http://localhost:3001/user/register", {
-      username: "John Doe",
-      email: "johndoe@example.com",
-      password: "SecurePassword123",
+      username: "williamST",
+      email: "williamSilva123@gmail.com",
+      password: "williamTESTE123",
     });
   } catch (err) {
     console.error("Error registering user:", err.message);
@@ -17,8 +17,8 @@ async function registerUser() {
 async function getAuthCookies() {
   try {
     const response = await axios.post("http://localhost:3001/auth/login", {
-      email: "johndoe@example.com",
-      password: "SecurePassword123",
+      email: "williamSilva123@gmail.com",
+      password: "williamTESTE123",
     });
 
     const cookies = response.headers["set-cookie"];
@@ -36,7 +36,8 @@ async function getIdList(cookies) {
     const response = await axios.get("http://localhost:3001/lists/", {
       headers: { Cookie: cookies },
     });
-    return response.data.data[1].list_id;
+    console.log(response.data.data[0].list_id);
+    return response.data.data[0].list_id;
   } catch (err) {
     console.error("Error getting list id:", err.message);
     process.exit(1);
@@ -60,17 +61,17 @@ async function runBenchmark() {
         "Content-Type": "application/json",
       },
       requests: [
-        {
-          method: "POST",
-          path: "/auth/login",
-          body: JSON.stringify({
-            email: "johndoe@example.com",
-            password: "SecurePassword123",
-          }),
-          // headers: {
-          //   cookie: cookies,
-          // },
-        },
+        // {
+        //   method: "POST",
+        //   path: "/auth/login",
+        //   body: JSON.stringify({
+        //     email: "johndoe@example.com",
+        //     password: "SecurePassword123",
+        //   }),
+        //   // headers: {
+        //   //   cookie: cookies,
+        //   // },
+        // },
         {
           method: "GET",
           path: "/user/",
@@ -95,12 +96,21 @@ async function runBenchmark() {
           path: `/lists/${listId}`,
         },
         {
-          method: "PATCH",
-          path: `/lists/update/${listId}`,
+          method: "POST",
+          path: `/lists/${listId}/tasks/create`,
           body: JSON.stringify({
-            listName: "Movies to watch (updated)",
+            nameTask: "Buy groceries",
+            comment: "Remember to buy milk and eggs",
+            dueDate: "2025-03-10",
           }),
         },
+        // {
+        //   method: "PATCH",
+        //   path: `/lists/update/${listId}`,
+        //   body: JSON.stringify({
+        //     listName: "Movies to watch (updated)",
+        //   }),
+        // },
         // {
         //   method: "DELETE",
         //   path: `/lists/${listId}`,

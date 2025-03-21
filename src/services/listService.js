@@ -48,45 +48,16 @@ const createList = async (listName, userId) => {
 const getAllListsByUserId = async (userId, limit, offset) => {
   try {
     const text = `
-    SELECT 
-    l.id AS list_id,
-    l.name_list,
-    l.created_at,
-    COALESCE(
-        ARRAY_AGG(
-            CASE 
-                WHEN t.id IS NOT NULL AND t.name_task IS NOT NULL THEN
-                    JSON_BUILD_OBJECT(
-                        'task_id', t.id,
-                        'task_name', t.name_task,
-                        'task_description', t.comment,
-                        'task_due_date', t.due_date,
-                        'task_finished', t.completed,
-                        'task_created_at', t.created_at
-                    )
-                ELSE NULL
-            END
-            ORDER BY t.created_at
-        ), '{}'
-    ) AS tasks
-    FROM 
-      lists l
-    LEFT JOIN 
-      tasks t ON l.id = t.list_id
-    WHERE 
-      l.user_id = $1
-    GROUP BY 
-      l.id, l.name_list, l.created_at
-    ORDER BY 
-      l.created_at DESC
-    LIMIT $2 OFFSET $3`;
-
-    console.log("funcao banco", limit, offset);
+    SELECT * 
+        FROM lists 
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3;`;
     const values = [userId, limit, offset];
-    const result = await pool.query(text, values);
-    console.log(result.rows);
-    if (result.rows.length === 0) return null;
 
+    const result = await pool.query(text, values);
+
+    if (result.rows.length === 0) return null;
     return result.rows;
   } catch (err) {
     console.error("Error getting all lists by userId:", err);

@@ -53,12 +53,12 @@ const options = {
               type: "string",
               format: "https://exampleAvatar.png",
             },
-            lists: {
-              type: "array",
-              items: {
-                $ref: "#/components/schemas/List",
-              },
-            },
+            // lists: {
+            //   type: "array",
+            //   items: {
+            //     $ref: "#/components/schemas/List",
+            //   },
+            // },
           },
         },
         List: {
@@ -77,12 +77,12 @@ const options = {
               format: "date-time",
               example: "2023-10-01T12:00:00Z",
             },
-            tasks: {
-              type: "array",
-              items: {
-                $ref: "#/components/schemas/Task",
-              },
-            },
+            // tasks: {
+            //   type: "array",
+            //   items: {
+            //     $ref: "#/components/schemas/Task",
+            //   },
+            // },
           },
         },
         Task: {

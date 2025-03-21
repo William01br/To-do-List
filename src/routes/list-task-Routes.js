@@ -37,6 +37,19 @@ const router = express.Router();
  *       - List
  *     security:
  *       - AccessToken: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page.
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip.
  *     responses:
  *       200:
  *         description: Successfully retrieved the lists.
@@ -86,6 +99,18 @@ router.get(
  *         schema:
  *           type: string
  *         description: The ID of the list to retrieve.
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page.
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip.
  *     responses:
  *       200:
  *         description: Successfully retrieved the list.
@@ -108,7 +133,7 @@ router.get(
   "/:listId",
   authenticateToken,
   (req, res, next) => {
-    req.routePagination = "getListById";
+    req.routePagination = "getList-Task-ById";
     next();
   },
   getAllDataPagination,
@@ -286,6 +311,18 @@ router.delete("/remove/:listId", authenticateToken, deleteList);
  *         schema:
  *           type: string
  *         description: The unique identifier of the list whose tasks are being retrieved.
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page.
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip.
  *     responses:
  *       200:
  *         description: Successfully retrieved tasks.
@@ -332,7 +369,7 @@ router.get(
   "/:listId/tasks",
   authenticateToken,
   (req, res, next) => {
-    req.routePagination = "routeTask";
+    req.routePagination = "getList-Task-ById";
     next();
   },
   getAllDataPagination,
