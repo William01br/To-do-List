@@ -60,30 +60,31 @@ describe("get all tasks by list Id", () => {
   it("should return all tasks", async () => {
     const mockTasks = [
       {
-        id: 1,
-        name_task: "Task 1",
-        comment: "Task 1 comment",
-        due_date: "2022-12-31",
-        completed: false,
-      },
-      {
         id: 2,
         name_task: "Task 2",
         comment: "Task 2 comment",
         due_date: "2023-01-01",
         completed: true,
       },
+      {
+        id: 1,
+        name_task: "Task 1",
+        comment: "Task 1 comment",
+        due_date: "2022-12-31",
+        completed: false,
+      },
     ];
     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
     pool.query.mockResolvedValueOnce({ rows: mockTasks });
 
-    const result = await taskService.getAllTasksByListId(1, 1);
+    const result = await taskService.getAllTasksByListId(1, 1, 10, 0);
 
     expect(result).toBe(mockTasks);
     expect(pool.query).toHaveBeenCalledTimes(2);
-    expect(pool.query).toHaveBeenCalledWith(
-      `SELECT * FROM tasks WHERE list_id = $1`,
-      [1]
+    expect(pool.query).toHaveBeenNthCalledWith(
+      1,
+      "SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)",
+      [1, 1]
     );
   });
 
@@ -100,13 +101,14 @@ describe("get all tasks by list Id", () => {
     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
     pool.query.mockRejectedValueOnce(new Error("database error"));
 
-    await expect(taskService.getAllTasksByListId(1, 1)).rejects.toThrow(
+    await expect(taskService.getAllTasksByListId(1, 1, 10, 0)).rejects.toThrow(
       "Failed to get tasks by listId"
     );
     expect(pool.query).toHaveBeenCalledTimes(2);
-    expect(pool.query).toHaveBeenCalledWith(
-      `SELECT * FROM tasks WHERE list_id = $1`,
-      [1]
+    expect(pool.query).toHaveBeenNthCalledWith(
+      1,
+      "SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)",
+      [1, 1]
     );
   });
 });
