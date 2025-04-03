@@ -95,7 +95,8 @@ describe("GET /lists/:listId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const lists = await request(app).get("/lists/").set("Cookie", cookies);
+      const listId = lists.body.data[0].id;
 
       const response = await request(app)
         .get(`/lists/${listId}`)
@@ -129,7 +130,7 @@ describe("GET /lists/:listId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const listId = 1;
 
       jest.spyOn(pool, "query").mockRejectedValue(new Error("database error"));
 
@@ -285,7 +286,7 @@ describe("PATCH /lists/update/:listId", () => {
       const cookies = login.headers["set-cookie"];
 
       const lists = await request(app).get("/lists/").set("Cookie", cookies);
-      const listId = lists.body.data[1].list_id;
+      const listId = lists.body.data[0].id;
 
       const response = await request(app)
         .patch(`/lists/update/${listId}`)
@@ -424,7 +425,7 @@ describe("DELETE /lists/remove/:listId", () => {
       const cookies = login.headers["set-cookie"];
 
       const lists = await request(app).get("/lists/").set("Cookie", cookies);
-      const listId = lists.body.data[1].list_id;
+      const listId = lists.body.data[0].id;
 
       const response = await request(app)
         .delete(`/lists/remove/${listId}`)

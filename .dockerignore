@@ -1,32 +1,30 @@
-# Ignorar diretórios de dependências
+# Ignore dependency directories
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Ignorar arquivos de configuração específicos do ambiente
+# Ignore environment-specific configuration files
 .env
 *.env
 
-# Ignorar arquivos e diretórios específicos de controle de versão
+# Ignore specific version control files and directories
 .git/
 .gitignore
 
-# Ignorar diretórios específicos de IDE
+# Ignore IDE-specific directories
 .vscode/
 .idea/
 
-# Ignorar arquivos de build ou logs
+# Ignore build files or logs
 dist/
 build/
 logs/
 tmp/
 
-# Ignorar arquivos de cache
+# Ignore cache files
 .cache/
 
-# Outros arquivos que você não quer incluir na imagem
+# Other files you don't want to include in the image
 Dockerfile*
 docker-compose.yml
-images_project
-info.txt
-test.txt
+results/

@@ -1,11 +1,4 @@
-.clinic
-22267.0x
-clinic-output
-coverage
 .env
 .env.test
 node_modules
-images_project
-info.txt
-queryDB.txt
-coverage
+results

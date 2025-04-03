@@ -1,13 +1,16 @@
 import { pool } from "../src/config/db.js";
 
 beforeAll(async () => {
-  console.log("Reseting database");
-  await pool.query("SET session_replication_role = 'replica';");
-  await pool.query("DELETE FROM users");
-  await pool.query("DELETE FROM refresh_tokens");
-  await pool.query("DELETE FROM lists");
-  await pool.query("DELETE FROM tasks");
-  await pool.query("SET session_replication_role = 'origin';");
+  try {
+    await pool.query("BEGIN");
+
+    await pool.query("TRUCATE TABLE users CASCADE RESTART IDENTITY");
+
+    await pool.query("COMMIT");
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    console.error("Error truncating table:", err);
+  }
 });
 
 beforeEach(async () => {

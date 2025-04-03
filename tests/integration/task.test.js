@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import signature from "cookie-signature";
 
 import app from "../../src/app.js";
-import taskService from "../../src/services/taskService.js";
 import { pool } from "../../src/config/db.js";
 
 const getSignedCookie = (token) => {
@@ -12,6 +11,19 @@ const getSignedCookie = (token) => {
 
   // Create the cookie string manually (simulating an HTTP response cookie)
   return `acessToken=${signedToken}; Path=/; HttpOnly`;
+};
+
+const getListId = async (cookies) => {
+  const lists = await request(app).get("/lists/").set("Cookie", cookies);
+  console.log(lists.body.data[0].id);
+  return lists.body.data[0].id;
+};
+
+const getTaskId = async (cookies, listId) => {
+  const tasks = await request(app)
+    .get(`/lists/${listId}/tasks`)
+    .set("Cookie", cookies);
+  return tasks.body.data[0].id;
 };
 
 describe("GET /lists/:listId/tasks", () => {
@@ -24,7 +36,14 @@ describe("GET /lists/:listId/tasks", () => {
 
         const cookies = login.headers["set-cookie"];
 
-        const listId = login.body.user.lists[0].list_id;
+        const listaData = await request(app)
+          .post("/lists/create/")
+          .send({
+            listName: "Movies to watch",
+          })
+          .set("Cookie", cookies);
+
+        const listId = listaData.body.data.id;
 
         const response = await request(app)
           .get(`/lists/${listId}/tasks`)
@@ -42,7 +61,7 @@ describe("GET /lists/:listId/tasks", () => {
 
         const cookies = login.headers["set-cookie"];
 
-        const listId = login.body.user.lists[0].list_id;
+        const listId = await getListId(cookies);
 
         await request(app)
           .post(`/lists/${listId}/tasks`)
@@ -82,7 +101,7 @@ describe("GET /lists/:listId/tasks", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const listId = 1;
 
       jest.spyOn(pool, "query").mockRejectedValue(new Error("database error"));
 
@@ -131,9 +150,8 @@ describe("GET /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
-      console.log("listId:", listId, "\nTaskId:", taskId);
+      const listId = await getListId(cookies);
+      const taskId = await getTaskId(cookies, listId);
 
       const response = await request(app)
         .get(`/lists/${listId}/tasks/${taskId}`)
@@ -149,7 +167,7 @@ describe("GET /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const taskId = 1;
 
       const response = await request(app)
         .get(`/lists/${0}/tasks/${taskId}`)
@@ -165,9 +183,7 @@ describe("GET /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
-      console.log("listId:", listId, "\nTaskId:", taskId);
+      const listId = await getListId(cookies);
 
       const response = await request(app)
         .get(`/lists/${listId}/tasks/${0}`)
@@ -183,8 +199,8 @@ describe("GET /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const listId = 1;
+      const taskId = 1;
 
       jest.spyOn(pool, "query").mockRejectedValue(new Error("database error"));
 
@@ -233,7 +249,7 @@ describe("POST /lists/:listId/tasks", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const listId = await getListId(cookies);
 
       const response = await request(app)
         .post(`/lists/${listId}/tasks`)
@@ -254,7 +270,7 @@ describe("POST /lists/:listId/tasks", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const listId = await getListId(cookies);
 
       const response = await request(app)
         .post(`/lists/${listId}/tasks`)
@@ -297,7 +313,7 @@ describe("POST /lists/:listId/tasks", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const listId = await getListId(cookies);
 
       jest.spyOn(pool, "query").mockRejectedValue(new Error("database error"));
 
@@ -351,8 +367,8 @@ describe("PATCH /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const listId = await getListId(cookies);
+      const taskId = await getTaskId(cookies, listId);
 
       const response = await request(app)
         .patch(`/lists/${listId}/tasks/${taskId}`)
@@ -377,8 +393,8 @@ describe("PATCH /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const listId = await getListId(cookies);
+      const taskId = await getTaskId(cookies, listId);
 
       const response = await request(app)
         .patch(`/lists/${listId}/tasks/${taskId}`)
@@ -403,7 +419,7 @@ describe("PATCH /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const taskId = 1;
 
       const response = await request(app)
         .patch(`/lists/${0}/tasks/${taskId}`)
@@ -425,7 +441,7 @@ describe("PATCH /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const listId = await getListId(cookies);
 
       const response = await request(app)
         .patch(`/lists/${listId}/tasks/${0}`)
@@ -447,8 +463,8 @@ describe("PATCH /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const listId = await getListId(cookies);
+      const taskId = await getTaskId(cookies, listId);
 
       jest.spyOn(pool, "query").mockRejectedValue(new Error("database error"));
 
@@ -503,8 +519,8 @@ describe("DELETE /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const listId = await getListId(cookies);
+      const taskId = await getTaskId(cookies, listId);
 
       const response = await request(app)
         .delete(`/lists/${listId}/tasks/${taskId}`)
@@ -523,7 +539,7 @@ describe("DELETE /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const taskId = 1;
 
       const response = await request(app)
         .delete(`/lists/${0}/tasks/${taskId}`)
@@ -539,7 +555,7 @@ describe("DELETE /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
+      const listId = await getListId(cookies);
 
       const response = await request(app)
         .delete(`/lists/${listId}/tasks/${0}`)
@@ -558,8 +574,8 @@ describe("DELETE /lists/:listId/tasks/:taskId", () => {
 
       const cookies = login.headers["set-cookie"];
 
-      const listId = login.body.user.lists[0].list_id;
-      const taskId = login.body.user.lists[0].tasks[0].task_id;
+      const listId = await getListId(cookies);
+      const taskId = await getTaskId(cookies, listId);
 
       jest.spyOn(pool, "query").mockRejectedValue(new Error("database error"));
 

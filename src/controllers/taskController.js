@@ -89,7 +89,6 @@ const getTaskByTaskId = async (req, res) => {
     const userId = req.userId;
 
     const result = await taskService.getTaskByTaskId(listId, taskId, userId);
-    console.log(result);
 
     if (!result) return res.status(404).json({ message: "List not found" });
 

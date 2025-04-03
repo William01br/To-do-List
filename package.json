@@ -7,10 +7,7 @@
   "scripts": {
     "test": "NODE_ENV=test jest --runInBand",
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
-    "doctor": "NODE_ENV=test clinic doctor -- node --trace-deprecation --trace-gc src/server.js",
-    "flame": "NODE_ENV=test clinic flame -- node --trace-sync-io src/server.js",
-    "bubbleprof": "NODE_ENV=test clinic bubbleprof --autocannon -- node src/server.js"
+    "start": "node src/server.js"
   },
   "jest": {
     "testEnvironment": "node",
@@ -21,7 +18,6 @@
       "./tests/setupAfterEnv.js"
     ],
     "globalSetup": "./tests/globalSetup.js",
-    "globalTeardown": "./tests/globalTeardown.js",
     "coverageDirectory": "coverage",
     "collectCoverage": true,
     "testMatch": [
@@ -36,10 +32,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "autocannon": "^8.0.0",
-    "axios": "^1.8.2",
     "bcrypt": "^5.1.1",
-    "clinic": "^13.0.0",
     "cloudinary": "^2.5.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",

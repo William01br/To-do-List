@@ -72,7 +72,7 @@ export const getAllDataPagination = async (req, res, next) => {
     };
     next();
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 

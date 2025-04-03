@@ -78,7 +78,7 @@ const getListByListId = async (listId, limit, offset) => {
         SELECT *
         FROM tasks
         WHERE list_id = $1
-        ORDER BY id
+        ORDER BY created_at
         LIMIT $2 OFFSET $3
       ) t ON t.list_id = l.id
       WHERE l.id = $1
@@ -102,7 +102,6 @@ const updateByListId = async (listId, userId, nameList) => {
     const values = [nameList, listId, userId, false];
 
     const result = await pool.query(text, values);
-    // console.log(result);
     if (result.rowCount === 0) return null;
 
     return true;

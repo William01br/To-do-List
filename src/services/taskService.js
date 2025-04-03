@@ -67,7 +67,6 @@ const getTaskByTaskId = async (listId, taskId, userId) => {
   try {
     const listExistence = await verifyListExist(listId, userId);
     if (!listExistence) return null;
-    console.log("PASS");
 
     const text = `SELECT * FROM tasks WHERE list_id = $1 AND id = $2`;
     const values = [listId, taskId];
@@ -105,8 +104,6 @@ const updateTaskByTaskId = async (
     const values = [nameTask, comment, dueDate, completed, listId, taskId];
 
     const result = await pool.query(text, values);
-    console.log(result);
-
     return result.rowCount;
   } catch (err) {
     console.error("Error updating task by taskId:", err);

@@ -1,7 +1,7 @@
 services:
-  db:
+  db_dev:
     image: postgres:17
-    container_name: myapp_db
+    container_name: myapp_db_dev
     restart: always
     ports:
       - "5432:5432"
@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: myapp_dev
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - db_dev_data:/var/lib/postgresql/data
 
   db_test:
     image: postgres:17
@@ -23,25 +23,21 @@ services:
       POSTGRES_PASSWORD: postgrestest
       POSTGRES_DB: myapp_test
     tmpfs:
-      - /var/lib/postgresql/data # Prevents data persistence in tests
+      - /var/lib/postgresql/data
 
   app:
     build:
       context: .
     container_name: myapp_api
     restart: always
-    depends_on:
-      - db
-    environment:
-      DATABASE_HOST: db
-      DATABASE_USER: myuser
-      DATABASE_PASSWORD: postgres
-      DATABASE_NAME: myapp_dev
     ports:
       - "3000:3000"
+    depends_on:
+      - db_dev
+      - db_test
     volumes:
       - .:/app
       - /app/node_modules
 
 volumes:
-  pgdata:
+  db_dev_data:
