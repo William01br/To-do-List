@@ -1,15 +1,13 @@
-/**
- * auth Service
- * Resolve all deeps operations of the auth Controller, such as generating tokens, interacting with database and encripting the data.
- */
-
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
 import dotenv from "dotenv";
+import InternalErrorHttp from "../errors/InternalError.js";
+import BadRequestErrorHttp from "../errors/BadRequestError.js";
+import NotFoundErrorHttp from "../errors/NotFoundError.js";
 dotenv.config();
 
-const generateAcessToken = (userId) =>
+const generateAccessToken = (userId) =>
   jwt.sign({ userId }, process.env.ACESS_TOKEN_SECRET, {
     expiresIn: "1h",
   });
@@ -22,139 +20,103 @@ const generateRefreshToken = (userId) =>
 const hashRefreshToken = async (refreshToken) =>
   await bcrypt.hash(refreshToken, 10);
 
-/**
- * Stores a hashed refresh token in the database for a specific user.
- * The refresh token is associated with an expiration date (7 days from now) and a last updated timestamp.
- *
- * @async
- * @function storeRefreshToken
- * @param {string} userId - The ID of the user for whom the refresh token is being stored.
- * @param {string} hashedRefreshToken - The hashed refresh token to store in the database.
- * @returns {Promise<void>} A promise that resolves when the refresh token is successfully stored.
- * @throws {Error} If the database operation fails, an error is thrown with the message "Failed to store refresh token".
- *
- */
 const storeRefreshToken = async (userId, hashedRefreshToken) => {
   const daysToMilliseconds = (days) => days * 24 * 60 * 60 * 1000;
   const expiresAt = new Date(Date.now() + daysToMilliseconds(7));
   const updatedAt = new Date(Date.now());
 
-  try {
-    const text =
-      "INSERT INTO refresh_tokens (user_id, refresh_token, expires_at, updated_at) VALUES ($1, $2, $3, $4)";
-    const values = [userId, hashedRefreshToken, expiresAt, updatedAt];
+  const text =
+    "INSERT INTO refresh_tokens (user_id, refresh_token, expires_at, updated_at) VALUES ($1, $2, $3, $4)";
+  const values = [userId, hashedRefreshToken, expiresAt, updatedAt];
 
-    await pool.query(text, values);
-  } catch (err) {
-    throw err;
-  }
+  await pool.query(text, values);
 };
 
 /**
- * Generates and returns a new access token and refresh token for a specific user.
- * This function also handles the deletion of any existing refresh token for the user,
- * hashes the new refresh token, and stores it in the database.
  *
- * @async
- * @function getTokens
- * @param {string} userId - The ID of the user for whom the tokens are being generated.
- * @returns {Promise<{ accessToken: string, refreshToken: string }>} A promise that resolves to an object containing the new access token and refresh token.
- * @throws {Error} If any step in the token generation process fails, an error is thrown with the message "Failed to create tokens".
+ * EXPLICAR ESSE FLUXO AQUI EM ETAPAS
+ *
  */
 const getTokens = async (userId) => {
-  try {
-    await deleteRefreshToken(userId);
+  await deleteRefreshToken(userId);
 
-    const acessToken = generateAcessToken(userId);
+  const accessToken = generateAccessToken(userId);
 
-    const refreshToken = generateRefreshToken(userId);
+  const refreshToken = generateRefreshToken(userId);
 
-    const hashedRefreshToken = await hashRefreshToken(refreshToken);
+  if (!refreshToken || !accessToken)
+    throw new InternalErrorHttp({ message: "tokens were not generated " });
 
-    await storeRefreshToken(userId, hashedRefreshToken);
+  const hashedRefreshToken = await hashRefreshToken(refreshToken);
 
-    return { accessToken: acessToken, refreshToken: refreshToken };
-  } catch (err) {
-    console.error("Error creating tokens:", err);
-    throw new Error("Failed to create tokens");
-  }
+  await storeRefreshToken(userId, hashedRefreshToken);
+
+  return { accessToken: accessToken, refreshToken: refreshToken };
 };
 
 const login = async (email, password) => {
-  try {
-    const user = await getUserByEmail(email);
-    if (!user || user.lenght === 0) return null;
+  const user = await getUserByEmail(email);
+  if (!user)
+    throw new NotFoundErrorHttp({
+      message: "E-mail not found",
+    });
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) return null;
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch)
+    throw new UnauthorizedErrorHttp({ message: "Invalid credentials" });
 
-    return user.id;
-  } catch (err) {
-    console.error("Error when logging in user", err);
-    throw new Error("Error when logging in user");
-  }
+  return user.id;
 };
 
 const getUserByEmail = async (email) => {
-  try {
-    const text = "SELECT * FROM users WHERE email = $1";
+  const text = "SELECT * FROM users WHERE email = $1";
 
-    const result = await pool.query(text, [email]);
-    return result.rows[0];
-  } catch (err) {
-    throw err;
-  }
+  const result = await pool.query(text, [email]);
+  return result.rows[0];
 };
 
 // Receive a refresh token and creates a new acess token.
-const getAcessToken = async (refreshToken, userId) => {
-  try {
-    const storedToken = await getRefreshTokenByUserId(userId);
-    if (!storedToken || storedToken.lenght === 0) return null;
+const getAccessToken = async (refreshToken, userId) => {
+  /**
+   * E o ExpiredAt? NÃO HÁ VERIFICAÇÃO SOBRE A EXPIRAÇÃO DO TOKEN, SÓ SE ELE EXISTE OU NÃO
+   * TEM QUE REVER ISSO.
+   */
+  const storedToken = await getRefreshTokenByUserId(userId);
+  if (!storedToken)
+    throw new NotFoundErrorHttp({
+      message: "Refresh token not found",
+      context: "Token Alredy revoked or expired",
+    });
 
-    const isMatch = await bcrypt.compare(
-      refreshToken,
-      storedToken.refresh_token
-    );
-    if (!isMatch) return null;
+  const isMatch = await bcrypt.compare(refreshToken, storedToken.refresh_token);
+  if (!isMatch)
+    throw new BadRequestErrorHttp({
+      message: "Refresh token provided is invalid",
+    });
 
-    return generateAcessToken(userId);
-  } catch (err) {
-    console.error("Error getting acess token:", err);
-    throw new Error("Error getting acess token");
-  }
+  return generateAccessToken(userId);
 };
 
 const getRefreshTokenByUserId = async (userId) => {
-  try {
-    const text =
-      "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1";
+  const text =
+    "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1";
 
-    const result = await pool.query(text, [userId]);
-    return result.rows[0];
-  } catch (err) {
-    throw err;
-  }
+  const result = await pool.query(text, [userId]);
+  return result.rows[0];
 };
 
-// deletes the refresh token of specific user storaged in database
 const deleteRefreshToken = async (userId) => {
-  try {
-    const text = "DELETE FROM refresh_tokens WHERE user_id = $1";
+  const text = "DELETE FROM refresh_tokens WHERE user_id = $1";
 
-    await pool.query(text, [userId]);
-  } catch (err) {
-    console.error("Error deleting refresh token:", err);
-    throw new Error("refresh token not deleted");
-  }
+  await pool.query(text, [userId]);
 };
 
 export default {
   login,
-  getAcessToken,
+  getAccessToken,
   getTokens,
   deleteRefreshToken,
   getUserByEmail,
   getRefreshTokenByUserId,
-  generateAcessToken,
+  generateAccessToken,
 };
