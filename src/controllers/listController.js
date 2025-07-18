@@ -1,100 +1,75 @@
 import listService from "../services/listService.js";
+import BadRequestErrorHttp from "../errors/BadRequestError.js";
 
 const createList = async (req, res) => {
-  try {
-    const userId = req.userId;
+  const userId = req.userId;
 
-    const { listName } = req.body;
-    if (!listName)
-      return res.status(400).json({ message: "List name is required" });
+  const { listName } = req.body;
+  if (!listName)
+    throw new BadRequestErrorHttp({
+      message: "List name is required",
+    });
 
-    const result = await listService.createList(listName, userId);
-    if (!result) {
-      return res.status(500).json({ message: "List not created" });
-    }
+  const result = await listService.createList(listName, userId);
 
-    return res.status(200).json({ data: result });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
+  return res.status(200).json({ data: result });
 };
 
 const getAllLists = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { nextUrl, previousUrl, limit, offset } = req.dataPagination;
+  const userId = req.userId;
+  const { nextUrl, previousUrl, limit, offset } = req.dataPagination;
 
-    console.log("controler - limite/offset:", limit, offset);
-    const result = await listService.getAllListsByUserId(userId, limit, offset);
-    if (!result) {
-      return res.status(404).json({ message: "user not found" });
-    }
+  const result = await listService.getAllListsByUserId(userId, limit, offset);
 
-    return res.status(200).json({ nextUrl, previousUrl, data: result });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
+  return res.status(200).json({ nextUrl, previousUrl, data: result });
 };
 
 const getListByListId = async (req, res) => {
-  try {
-    const listId = req.params.listId;
-    const { nextUrl, previousUrl, limit, offset } = req.dataPagination;
+  const listId = req.params.listId;
+  const { nextUrl, previousUrl, limit, offset } = req.dataPagination;
 
-    if (!listId)
-      return res.status(400).json({ message: "list Id is required" });
+  if (!listId)
+    throw new BadRequestErrorHttp({
+      message: "list Id is required",
+    });
 
-    const result = await listService.getListByListId(listId, limit, offset);
-    if (!result) return res.status(404).json({ message: "List not found" });
+  const result = await listService.getListByListId(listId, limit, offset);
 
-    return res.status(200).json({ nextUrl, previousUrl, data: result });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
+  return res.status(200).json({ nextUrl, previousUrl, data: result });
 };
 
 const updateList = async (req, res) => {
-  try {
-    const listId = req.params.listId;
-    if (!listId)
-      return res.status(400).json({ message: "List Id is required" });
+  const listId = req.params.listId;
+  if (!listId)
+    throw new BadRequestErrorHttp({
+      message: "List Id is required",
+    });
 
-    const { listName } = req.body;
-    if (!listName)
-      return res.status(400).json({ message: "Name list is required" });
+  const { listName } = req.body;
+  if (!listName)
+    throw new BadRequestErrorHttp({ message: "Name list is required" });
 
-    const userId = req.userId;
+  const userId = req.userId;
 
-    const result = await listService.updateByListId(listId, userId, listName);
-    if (!result)
-      return res
-        .status(404)
-        .json({ message: "List not found. Nothing was updated" });
+  // should receive the list updated??
+  await listService.updateByListId(listId, userId, listName);
 
-    return res.status(200).json({ message: "List updated sucessfuly" });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
+  return res.status(200).json({ message: "List updated sucessfuly" });
 };
 
 const deleteList = async (req, res) => {
-  try {
-    const listId = req.params.listId;
-    if (!listId)
-      return res.status(400).json({ message: "List Id is required" });
+  const listId = req.params.listId;
+  if (!listId)
+    throw new BadRequestErrorHttp({
+      message: "List Id is required",
+    });
 
-    const userId = req.userId;
+  const userId = req.userId;
 
-    const result = await listService.deleteListByListId(listId, userId);
-    if (!result)
-      return res
-        .status(404)
-        .json({ message: "List not found. Nothing was deleted" });
+  await listService.deleteListByListId(listId, userId);
 
-    return res.status(200).json({ message: "List deleted successfully" });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
+  // IDEMPOTENT
+  return res.status(204).send();
 };
 
 export { createList, getAllLists, getListByListId, updateList, deleteList };
