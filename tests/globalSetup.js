@@ -1,6 +1,7 @@
 import { pool } from "../src/config/db.js";
 
 export default async () => {
+  // é só exportar a função de models...
   console.log("Creating a test database");
   await pool.query(`CREATE TABLE IF NOT EXISTS "users" (
   id SERIAL PRIMARY KEY,
