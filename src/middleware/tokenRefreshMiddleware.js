@@ -1,42 +1,21 @@
 import jwt from "jsonwebtoken";
+import UnauthorizedErrorHttp from "../errors/UnauthorizedError.js";
 
-/**
- * Middleware to verify the expiration and validity of a refresh token stored in a signed cookie.
- * The refresh token is decrypted, verified, and decoded to extract the user ID.
- * If the token is valid, the user ID and decrypted refresh token are attached to the request object (`req.userId` and `req.refreshToken`),
- * and the request is passed to the next middleware.
- * If the token is missing, expired, or invalid, an appropriate error response is sent.
- *
- * @function verifyExpirationToken
- * @param {Object} req - The Express request object.
- * @param {Object} res - The Express response object.
- * @param {Function} next - The Express next middleware function.
- * @returns {void} If the token is valid, the request is passed to the next middleware.
- *                Otherwise, an error response is sent with an appropriate status code and message.
- *
- * @throws {Error} If the token is missing, expired, or invalid, an error response is sent:
- *                 - 401 Unauthorized: If the refresh token is missing or expired.
- *                 - 500 Internal Server Error: If an unexpected error occurs during decryption or verification.
- */
 const verifyExpirationToken = (req, res, next) => {
-  try {
-    // Extract the token from the signed cookies.
-    const refreshToken = req.signedCookies.refreshToken;
-    console.log(refreshToken);
+  // Extract the token from the signed cookies.
+  const refreshToken = req.signedCookies.refreshToken;
+  console.log(refreshToken);
 
-    if (!refreshToken)
-      return res
-        .status(401)
-        .json({ message: "refresh token not found or expired" });
+  if (!refreshToken)
+    throw new UnauthorizedErrorHttp({
+      message: "Refresh token not found or expired",
+    });
 
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-    req.userId = decoded.userId;
-    req.refreshToken = refreshToken;
-    next();
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
+  req.userId = decoded.userId;
+  req.refreshToken = refreshToken;
+  next();
 };
 
 export default verifyExpirationToken;

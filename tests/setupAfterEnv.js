@@ -4,7 +4,7 @@ beforeAll(async () => {
   try {
     await pool.query("BEGIN");
 
-    await pool.query("TRUCATE TABLE users CASCADE RESTART IDENTITY");
+    await pool.query("TRUNCATE TABLE users CASCADE RESTART IDENTITY");
 
     await pool.query("COMMIT");
   } catch (err) {

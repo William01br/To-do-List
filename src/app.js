@@ -8,8 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import listAndTaskRoutes from "./routes/list-task-Routes.js";
-import { notFound } from "./middleware/notFound.js";
-import errorHandler from "./middleware/errorMiddleware.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorMiddleware.js";
 import swaggerSpec from "./utils/swagger.js";
 
 const app = express();
@@ -47,8 +46,9 @@ app.use("/lists", listAndTaskRoutes);
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// express@5.1.0 have built-in handler for catch async errors
+// global middlewares
+app.use(notFoundHandler);
 app.use(errorHandler);
-
-app.use(notFound);
 
 export default app;

@@ -10,79 +10,71 @@ import { bufferToStream } from "../utils/bufferToStream.js";
 import { createTokenReset } from "../utils/crypto.js";
 import { transporter } from "../config/nodemailer.js";
 import { uploadFileToCloudinary, optimizeImage } from "./cloudinaryService.js";
-import { createDefaultlist } from "../controllers/userController.js";
+import InternalErrorHttp from "../errors/InternalError.js";
+import ConflictErrorHttp from "../errors/ConflicError.js";
+import NotFoundErrorHttp from "../errors/NotFoundError.js";
+import BadRequestErrorHttp from "../errors/BadRequestError.js";
 
 const register = async (username, email, password) => {
+  const emailAlredyExist = await verifyEmailExists(email);
+  if (emailAlredyExist)
+    throw new ConflictErrorHttp({
+      message: "The email address is already registered",
+    });
+
   const avatarUrl =
     "https://static.vecteezy.com/system/resources/thumbnails/009/734/564/small_2x/default-avatar-profile-icon-of-social-media-user-vector.jpg";
 
-  try {
-    const passwordHashed = await bcrypt.hash(password, 10);
+  const passwordHashed = await bcrypt.hash(password, 10);
 
-    const user = await insertUser(username, email, passwordHashed, avatarUrl);
+  const user = await insertUser(username, email, passwordHashed, avatarUrl);
 
-    return user;
-  } catch (err) {
-    // error code of value duplicate in DB.
-    if (err.code === "23505") return 23505;
-
-    console.error("Error registering user:", err);
-    throw new Error("Failed to register user");
-  }
+  return user.id;
 };
 
 const insertUser = async (username, email, passwordHashed, avatarUrl) => {
-  try {
-    const text =
-      "INSERT INTO users(username, email, password, avatar) VALUES ($1, $2, $3, $4) RETURNING id, username, email, avatar, created_at";
-    const values = [username, email, passwordHashed, avatarUrl];
+  const text =
+    "INSERT INTO users(username, email, password, avatar) VALUES ($1, $2, $3, $4) RETURNING id, username, email, avatar, created_at";
+  const values = [username, email, passwordHashed, avatarUrl];
 
-    const result = await pool.query(text, values);
-    return result.rows[0];
-  } catch (err) {
-    throw err;
-  }
+  const result = await pool.query(text, values);
+  return result.rows[0];
 };
 
 const findUserByOauthId = async (oauthId) => {
-  try {
-    const text = "SELECT * FROM users WHERE oauth_id = $1";
+  const text = "SELECT * FROM users WHERE oauth_id = $1";
 
-    const result = await pool.query(text, [oauthId]);
-    if (result.rows.length === 0) return null;
+  const result = await pool.query(text, [oauthId]);
+  // should return 'null'
+  if (result.rows.length === 0) return null;
 
-    const userId = result.rows[0].id;
-    const userData = await getAllDataUserByUserId(userId);
+  const userId = result.rows[0].id;
+  const userData = await getAllDataUserByUserId(userId);
 
-    return { id: userId, data: userData };
-  } catch (err) {
-    console.error("Error finding user by oauthId:", err);
-    throw new Error("Error finding user by oauthId");
-  }
+  return { id: userId, data: userData };
 };
 
 // function to save the user data that is registered by the OAuth provider.
 const registerByOAuth = async (data) => {
-  try {
-    const { oauthId, name, email, avatar, provider } = data;
-    const username = name.split(" ")[0];
+  /**
+   * REFATORAR ESSA FUNÇÃO AQUI
+   * ESSE USERNAME É UNIQUE, SALVO ENGANO, NO BANCO. SOMENTE ESSE MEIO DE GERÁ-LO VAI DAR MERDA.
+   */
+  const { oauthId, name, email, avatar, provider } = data;
+  const username = name.split(" ")[0];
 
-    const user = await insertUserByOAuth(
-      username,
-      email,
-      provider,
-      oauthId,
-      avatar
-    );
+  const user = await insertUserByOAuth(
+    username,
+    email,
+    provider,
+    oauthId,
+    avatar
+  );
 
-    await createDefaultlist(user.id);
+  await createDefaultlist(user.id);
 
-    const userData = await getAllDataUserByUserId(user.id);
-    return { id: user.id, data: userData };
-  } catch (err) {
-    console.error("Error registering user by OAuth:", err);
-    throw new Error("Error registering user by OAuth");
-  }
+  const userData = await getAllDataUserByUserId(user.id);
+  return { id: user.id, data: userData };
 };
 
 const insertUserByOAuth = async (
@@ -92,208 +84,150 @@ const insertUserByOAuth = async (
   oauthId,
   avatar
 ) => {
-  try {
-    const text =
-      "INSERT INTO users (username, email, oauth_provider, oauth_id, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING *";
-    const values = [username, email, oauthProvider, oauthId, avatar];
+  const text =
+    "INSERT INTO users (username, email, oauth_provider, oauth_id, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING *";
+  const values = [username, email, oauthProvider, oauthId, avatar];
 
-    const result = await pool.query(text, values);
-    return result.rows[0];
-  } catch (err) {
-    throw err;
-  }
+  const result = await pool.query(text, values);
+  return result.rows[0];
 };
 
-/**
- * Uploads file data to Cloudinary and optimizes the uploaded image.
- *
- * This function takes file data, converts it to a readable stream, uploads it to Cloudinary,
- * and then generates an optimized URL for the uploaded image with specific transformations.
- *
- * @async
- * @function uploadToCloudinary
- * @param {Object} fileData - The file data to be uploaded.
- * @param {Buffer} fileData.buffer - The buffer containing the file data.
- * @returns {Promise<string>} A promise that resolves with the optimized Cloudinary URL of the uploaded image.
- * @throws {Error} If an error occurs during the upload or optimization process, an error is thrown.
- */
 const uploadToCloudinary = async (fileData) => {
-  try {
-    // converts the Buffer file into a readable stream file that can be sent to cloudinary
-    const readableStream = bufferToStream(fileData.buffer);
+  // converts the Buffer file into a readable stream file that can be sent to cloudinary
+  const readableStream = bufferToStream(fileData.buffer);
 
-    // Resolves the promise and return data of image uploaded in server.
-    const result = await uploadFileToCloudinary(readableStream);
+  // Resolves the promise and return data of image uploaded in server.
+  const result = await uploadFileToCloudinary(readableStream);
 
-    // optimizes the imagem
-    const url = optimizeImage(result.secure_url);
-    return url;
-  } catch (err) {
-    console.error("Error uploading image to cloudinary:", err);
-    throw new Error("Error uploading image to cloudinary");
-  }
+  // optimizes the imagem
+  const url = optimizeImage(result.secure_url);
+  return url;
 };
 
 const updateAvatar = async (url, userId) => {
-  try {
-    const text = "UPDATE users SET avatar = $1 WHERE id = $2";
-    const values = [url, userId];
+  const text = "UPDATE users SET avatar = $1 WHERE id = $2";
+  const values = [url, userId];
 
-    const result = await pool.query(text, values);
-    if (result.rowCount === 0) return null;
-
-    return true;
-  } catch (err) {
-    console.error("Error updating avatar in DataBase:", err);
-    throw new Error("Error updating avatar in DataBase");
-  }
+  const result = await pool.query(text, values);
+  // se chegou aqui é porque tá autenticado
+  // então é erro interno
+  if (result.rowCount === 0)
+    throw new InternalErrorHttp({
+      message: "Avatar was not updated",
+      context: "Reason unknown",
+    });
 };
 
-/**
- * Sends an email to reset a user's password.
- *
- * This function checks if the provided email exists in the database, generates a reset token,
- * updates the user's record with the token and expiration date, and sends an email with a reset link.
- *
- * @async
- * @function sendEmailToResetPassword
- * @param {string} emailProvided - The email address provided by the user requesting a password reset.
- * @returns {Promise<boolean>} A promise that resolves to `true` if the email is sent successfully, or `null` if the email does not exist in the database.
- * @throws {Error} If an error occurs during the process, an error is thrown.
- */
 const sendEmailToResetPassword = async (emailProvided) => {
-  try {
-    const userEmail = await verifyEmailExists(emailProvided);
-    if (!userEmail) return null;
+  const userEmail = await verifyEmailExists(emailProvided);
+  if (!userEmail)
+    throw new NotFoundErrorHttp({
+      message: "E-mail not found",
+    });
 
-    // Generate a reset token and set its expiration date (1 hour from generation time)
-    const resetToken = await createTokenReset();
+  // Generate a reset token and set its expiration date (1 hour from generation time)
+  /**
+   * ANALISAR ISSO
+   */
+  const resetToken = await createTokenReset();
 
-    const isUpdated = await updateResetPasswords(resetToken, userEmail);
-    if (!isUpdated) return null;
+  const isUpdated = await updateResetPasswords(resetToken, userEmail);
+  // e-mail já foi validado
+  if (!isUpdated)
+    throw new InternalErrorHttp({
+      message: "Token reset passoword was not updated",
+      context: "Reason unknown",
+    });
 
-    // Create the reset URL with the generated token
-    const resetUrl = `localhost:3000/user/reset-password/${resetToken}`;
+  // Create the reset URL with the generated token
+  const resetUrl = `localhost:3000/user/reset-password/${resetToken}`;
 
-    const mailOptions = {
-      to: userEmail,
-      from: process.env.EMAIL_USER,
-      subject: "Password Reset",
-      text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
+  /**
+   * ISSO AQUI DEVERIA IR PARA OUTRO LUGAR
+   * podia ser uma função que recebe os parâmetros e retorna a mensagem.
+   */
+  const mailOptions = {
+    to: userEmail,
+    from: process.env.EMAIL_USER,
+    subject: "Password Reset",
+    text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
       Please click on the following link, or paste this into your browser to complete the process:\n\n
       ${resetUrl}\n\n
       If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-    };
+  };
 
-    await transporter.sendMail(mailOptions);
-    return true;
-  } catch (err) {
-    console.error("Error sending email to reset password:", err);
-    throw new Error("Error sending email to reset password");
-  }
+  await transporter.sendMail(mailOptions);
 };
 
 const verifyEmailExists = async (email) => {
-  try {
-    const text = "SELECT * FROM users WHERE email = $1";
-    const result = await pool.query(text, [email]);
+  const text = "SELECT * FROM users WHERE email = $1";
+  const result = await pool.query(text, [email]);
 
-    if (result.rows.length === 0) return null;
-    return result.rows[0].email;
-  } catch (err) {
-    throw err;
-  }
+  if (result.rows.length === 0) return null;
+  return result.rows[0].email;
 };
 
 const updateResetPasswords = async (resetToken, userEmail) => {
-  try {
-    console.log(resetToken);
-    const dateExpires = new Date(Date.now() + 3600000); // 1 hour
-    // console.log(resetToken, typeof resetToken, dateExpires);
-    console.log(dateExpires);
+  //   console.log(resetToken);
+  const dateExpires = new Date(Date.now() + 3600000); // 1 hour
+  // console.log(resetToken, typeof resetToken, dateExpires);
+  console.log(dateExpires);
 
-    const text =
-      "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3";
-    const values = [resetToken, dateExpires, userEmail];
+  const text =
+    "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3";
+  const values = [resetToken, dateExpires, userEmail];
 
-    const result = await pool.query(text, values);
-    console.log(result.rowCount);
-    if (result.rowCount === 0) return null;
-    return true;
-  } catch (err) {
-    throw err;
-  }
+  const result = await pool.query(text, values);
+  // console.log(result.rowCount);
+  return result.rowCount != 0;
 };
 
-/**
- * Resets a user's password using a valid reset token.
- *
- * This function verifies the reset token, checks if it is still valid (not expired),
- * hashes the new password, and updates the user's password in the database.
- * It also clears the reset token and expiration date after the password is updated.
- *
- * @async
- * @function resetPassword
- * @param {string} newPassword - The new password provided by the user.
- * @param {string} resetToken - The reset token provided by the user for verification.
- * @returns {Promise<boolean>} A promise that resolves to `true` if the password is reset successfully, or `null` if the reset token is invalid or expired.
- * @throws {Error} If an error occurs during the process, an error is thrown.
- */
 const resetPassword = async (newPassword, resetToken) => {
-  try {
-    const tokenIsValid = await verifyExpirationToken(resetToken);
-    if (!tokenIsValid) return null;
+  const tokenIsValid = await verifyExpirationToken(resetToken);
+  if (!tokenIsValid)
+    throw new BadRequestErrorHttp({
+      message: "Reset token was expired",
+    });
 
-    const passwordHashed = await bcrypt.hash(newPassword, 10);
+  const passwordHashed = await bcrypt.hash(newPassword, 10);
 
-    const updatedPassword = await updateNewPassword(passwordHashed, resetToken);
-    if (!updatedPassword) return null;
+  const updatedPassword = await updateNewPassword(passwordHashed, resetToken);
+  if (!updatedPassword)
+    throw new InternalErrorHttp({
+      message: "Password was not updated",
+      context: "Reason unknown",
+    });
 
-    return true;
-  } catch (err) {
-    console.error("Error resetting password:", err);
-    throw new Error("Error resetting password");
-  }
+  return true;
 };
 
 const verifyExpirationToken = async (resetToken) => {
-  try {
-    console.log(resetToken);
-    const dateNow = new Date(Date.now());
-    console.log(new Date(Date.now() + 3600000) > dateNow);
-    // checks that the token has not expired
-    const text =
-      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2";
-    const values = [resetToken, dateNow];
+  // console.log(resetToken);
+  const dateNow = new Date(Date.now());
+  // console.log(new Date(Date.now() + 3600000) > dateNow);
+  // checks that the token has not expired
+  const text =
+    "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2";
+  const values = [resetToken, dateNow];
 
-    const result = await pool.query(text, values);
-    console.log(result.rows);
+  const result = await pool.query(text, values);
+  console.log(result.rows);
 
-    if (result.rows.length === 0) return null;
-    return true;
-  } catch (err) {
-    throw err;
-  }
+  return result.rows.length != 0;
 };
 
 const updateNewPassword = async (passwordHashed, resetToken) => {
-  try {
-    const text =
-      "UPDATE users SET password = $1, reset_password_token = $2, reset_password_expires = $3 WHERE reset_password_token = $4";
-    const values = [passwordHashed, null, null, resetToken];
+  const text =
+    "UPDATE users SET password = $1, reset_password_token = $2, reset_password_expires = $3 WHERE reset_password_token = $4";
+  const values = [passwordHashed, null, null, resetToken];
 
-    const result = await pool.query(text, values);
+  const result = await pool.query(text, values);
 
-    if (result.rowCount === 0) return null;
-    return true;
-  } catch (err) {
-    throw err;
-  }
+  return result.rowCount === 1;
 };
 
 const getAllDataUserByUserId = async (userId) => {
-  try {
-    const text = `
+  const text = `
     SELECT 
     u.id AS user_id,
     u.username,
@@ -305,29 +239,20 @@ const getAllDataUserByUserId = async (userId) => {
     WHERE 
         u.id = $1;`;
 
-    const result = await pool.query(text, [userId]);
-    if (result.rows.length === 0) return null;
+  const result = await pool.query(text, [userId]);
+  if (result.rows.length === 0)
+    throw new BadRequestErrorHttp({
+      message: "User not found",
+    });
 
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error getting all data user by userId:", err);
-    throw new Error("Error getting all data user by userId");
-  }
+  return result.rows[0];
 };
 
 const deleteAccount = async (userId) => {
-  try {
-    // console.log(id);
-    const text = "DELETE FROM users WHERE id = $1";
+  const text = "DELETE FROM users WHERE id = $1";
 
-    const result = await pool.query(text, [userId]);
-    if (result.rowCount === 0) return null;
-
-    return true;
-  } catch (err) {
-    console.error("Error deleting all data user by userId:", err);
-    throw new Error("Error deleting all data user by userId");
-  }
+  // IDEMPOTENT
+  await pool.query(text, [userId]);
 };
 
 export default {

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "NODE_ENV=test jest --runInBand",
-    "dev": "nodemon src/server.js",
+    "start:dev": "NODE_ENV=dev nodemon src/server.js",
     "start": "node src/server.js"
   },
   "jest": {
@@ -37,7 +37,7 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
-    "express": "^4.21.1",
+    "express": "^5.1.0",
     "express-session": "^1.18.1",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
