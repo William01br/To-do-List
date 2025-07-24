@@ -50,9 +50,7 @@ const createTask = async (req, res) => {
 };
 
 const getTaskByTaskId = async (req, res) => {
-  const listId = req.params.listId;
-  const taskId = req.params.taskId;
-
+  const { listId, taskId } = req.params;
   if (!listId || !taskId)
     throw new BadRequestErrorHttp({
       message: "ListId and TaskId are required",
@@ -67,9 +65,8 @@ const getTaskByTaskId = async (req, res) => {
 
 const updateTask = async (req, res) => {
   const userId = req.userId;
-  const listId = req.params.listId;
-  const taskId = req.params.taskId;
 
+  const { listId, taskId } = req.params;
   if (!listId || !taskId)
     throw new BadRequestErrorHttp({
       message: "ListId and TaskId are required",
@@ -85,26 +82,50 @@ const updateTask = async (req, res) => {
       value === "" ? null : value,
     ])
   );
-  const { nameTask, comment, dueDate, completed } = sanitizedFields;
+  const { nameTask, comment, dueDate } = sanitizedFields;
 
-  if (!nameTask && !comment && !dueDate && !completed)
+  if (!nameTask && !comment && !dueDate)
     throw new BadRequestErrorHttp({
       message: "Is required update one field, at least",
       context: "no value was send",
     });
 
-  // should receive the task updated
-  await taskService.updateTaskByTaskId(
+  const task = await taskService.updateTaskByTaskId(
     listId,
     taskId,
     nameTask,
     comment,
     dueDate,
-    completed,
     userId
   );
 
-  return res.status(200).json({ message: "Task updated successfully" });
+  return res.status(200).json({ data: task });
+};
+
+const setTaskCompleted = async (req, res) => {
+  const userId = req.userId;
+
+  const { listId, taskId } = req.params;
+  if (!listId || !taskId)
+    throw new BadRequestErrorHttp({
+      message: "ListId and TaskId are required",
+    });
+
+  const completed = req.body.completed;
+  if (typeof completed !== "boolean")
+    throw new BadRequestErrorHttp({
+      message: "'completed' is required and must be boolean value",
+    });
+
+  const task = await taskService.setTaskCompleted(
+    userId,
+    listId,
+    taskId,
+    completed
+  );
+  res.status(200).json({
+    data: task,
+  });
 };
 
 const deleteTask = async (req, res) => {
@@ -123,4 +144,11 @@ const deleteTask = async (req, res) => {
   return res.status(204).send();
 };
 
-export { getAllTasks, createTask, getTaskByTaskId, updateTask, deleteTask };
+export {
+  getAllTasks,
+  createTask,
+  getTaskByTaskId,
+  updateTask,
+  deleteTask,
+  setTaskCompleted,
+};
