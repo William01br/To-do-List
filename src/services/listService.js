@@ -51,7 +51,7 @@ const updateByListId = async (listId, userId, nameList) => {
     throw new NotFoundErrorHttp({ message: "List not found" });
 
   // should return the list??
-  return true;
+  return result.rows[0];
 };
 
 const deleteListByListId = async (listId, userId) => {
