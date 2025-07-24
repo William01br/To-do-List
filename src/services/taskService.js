@@ -1,37 +1,20 @@
-import { pool } from "../config/db.js";
 import NotFoundErrorHttp from "../errors/NotFoundError.js";
+import listRepository from "../repository/listRepository.js";
+import taskRepository from "../repository/taskRepository.js";
 
 const getCountTasksByListId = async (listId) => {
-  const text = `SELECT COUNT(*) FROM tasks WHERE list_id = $1`;
-
-  const result = await pool.query(text, [listId]);
+  const result = await taskRepository.countTasksByListId(listId);
   return Number(result.rows[0].count);
 };
 
-const verifyListExist = async (listId, userId) => {
-  const text = `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`;
-  const values = [listId, userId];
-
-  const result = await pool.query(text, values);
-  return result.rows[0].exists;
-};
-
 const getAllTasksByListId = async (listId, userId, limit, offset) => {
-  const listExistence = await verifyListExist(listId, userId);
-  if (!listExistence)
+  const list = (await listRepository.listExists(listId, userId)).rows[0].exists;
+  if (!list)
     throw new NotFoundErrorHttp({
       message: "List not found",
     });
 
-  const text = `
-      SELECT * 
-        FROM tasks 
-        WHERE list_id = $1
-        ORDER BY created_at DESC
-        LIMIT $2 OFFSET $3`;
-  const values = [listId, limit, offset];
-
-  const result = await pool.query(text, values);
+  const result = await taskRepository.getAllByListId(listId, limit, offset);
 
   if (result.rows.length === 0)
     throw new NotFoundErrorHttp({
@@ -43,31 +26,30 @@ const getAllTasksByListId = async (listId, userId, limit, offset) => {
 };
 
 const createTask = async (nameTask, comment, dueDate, listId, userId) => {
-  const listExistence = await verifyListExist(listId, userId);
-  if (!listExistence)
+  const list = (await listRepository.listExists(listId, userId)).rows[0].exists;
+  if (!list)
     throw new NotFoundErrorHttp({
       message: "List not found",
     });
 
-  const text = `INSERT INTO tasks (name_task, comment, due_date, list_id) VALUES ($1, $2, $3, $4) RETURNING *`;
-  const values = [nameTask, comment, dueDate, listId];
-
-  const result = await pool.query(text, values);
+  const result = await taskRepository.create(
+    nameTask,
+    comment,
+    dueDate,
+    listId
+  );
 
   return result.rows[0];
 };
 
 const getTaskByTaskId = async (listId, taskId, userId) => {
-  const listExistence = await verifyListExist(listId, userId);
-  if (!listExistence)
+  const list = (await listRepository.listExists(listId, userId)).rows[0].exists;
+  if (!list)
     throw new NotFoundErrorHttp({
       message: "List not found",
     });
 
-  const text = `SELECT * FROM tasks WHERE list_id = $1 AND id = $2`;
-  const values = [listId, taskId];
-
-  const result = await pool.query(text, values);
+  const result = await taskRepository.getByTaskId(listId, taskId);
 
   if (result.rows.length === 0)
     throw new NotFoundErrorHttp({
@@ -86,23 +68,21 @@ const updateTaskByTaskId = async (
   completed,
   userId
 ) => {
-  const listExist = await verifyListExist(listId, userId);
-  if (!listExist)
+  const list = (await listRepository.listExists(listId, userId)).rows[0].exists;
+  if (!list)
     throw new NotFoundErrorHttp({
       message: "List not found",
     });
-
-  const text = `
-        UPDATE tasks 
-        SET 
-          name_task = COALESCE($1, name_task),
-          comment = COALESCE($2, comment),
-          due_date = COALESCE($3, due_date),
-          completed = COALESCE($4, completed)
-        WHERE list_id = $5 AND id = $6`;
-  const values = [nameTask, comment, dueDate, completed, listId, taskId];
-
-  const result = await pool.query(text, values);
+  // tem que editar esse completed
+  // adicionar uma rota só para check
+  const result = await taskRepository.updateByTaskId(
+    listId,
+    taskId,
+    nameTask,
+    comment,
+    dueDate,
+    completed
+  );
 
   if (result.rows.length === 0)
     throw new NotFoundErrorHttp({
@@ -114,19 +94,14 @@ const updateTaskByTaskId = async (
 };
 
 const deleteTaskByTaskId = async (listId, taskId, userId) => {
-  const listExist = await verifyListExist(listId, userId);
-  if (!listExist)
+  const list = (await listRepository.listExists(listId, userId)).rows[0].exists;
+  if (!list)
     throw new NotFoundErrorHttp({
       message: "List not found",
     });
 
-  const text = `DELETE FROM tasks WHERE list_id = $1 AND id = $2`;
-  const values = [listId, taskId];
-
   // must be return 204 - route IDEMPOTENT
-  const result = await pool.query(text, values);
-
-  return result.rowCount;
+  await taskRepository.deleteByTaskId(listId, taskId);
 };
 
 export default {
@@ -135,6 +110,5 @@ export default {
   getTaskByTaskId,
   updateTaskByTaskId,
   deleteTaskByTaskId,
-  verifyListExist,
   getCountTasksByListId,
 };
