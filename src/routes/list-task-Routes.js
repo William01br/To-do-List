@@ -23,6 +23,7 @@ import {
 } from "../controllers/taskController.js";
 import authenticateToken from "../middleware/authMiddleware.js";
 import { getAllDataPagination } from "../middleware/PaginationMiddleware.js";
+import { validateId } from "../middleware/validateId.js";
 
 const router = express.Router();
 
@@ -134,6 +135,7 @@ router.get(
   "/:listId",
   authenticateToken,
   (req, res, next) => {
+    validateId(req.params.listId);
     req.routePagination = "getList-Task-ById";
     next();
   },
@@ -228,7 +230,15 @@ router.post("/create", authenticateToken, createList);
  *       500:
  *         description: Internal server error.
  */
-router.patch("/update/:listId", authenticateToken, updateList);
+router.patch(
+  "/update/:listId",
+  (req, res, next) => {
+    validateId(req.params.listId);
+    next();
+  },
+  authenticateToken,
+  updateList
+);
 
 /**
  * @swagger
@@ -287,7 +297,15 @@ router.patch("/update/:listId", authenticateToken, updateList);
  *       500:
  *         description: Internal server error.
  */
-router.delete("/remove/:listId", authenticateToken, deleteList);
+router.delete(
+  "/remove/:listId",
+  (req, res, next) => {
+    validateId(req.params.listId);
+    next();
+  },
+  authenticateToken,
+  deleteList
+);
 
 /*
  * Routes for tasks
@@ -370,6 +388,7 @@ router.get(
   "/:listId/tasks",
   authenticateToken,
   (req, res, next) => {
+    validateId(req.params.listId);
     req.routePagination = "getList-Task-ById";
     next();
   },
@@ -439,7 +458,15 @@ router.get(
  *       500:
  *         description: Internal server error.
  */
-router.get("/:listId/tasks/:taskId", authenticateToken, getTaskByTaskId);
+router.get(
+  "/:listId/tasks/:taskId",
+  (req, res, next) => {
+    validateId(req.params.listId, req.params.taskId);
+    next();
+  },
+  authenticateToken,
+  getTaskByTaskId
+);
 
 /**
  * @swagger
@@ -521,7 +548,15 @@ router.get("/:listId/tasks/:taskId", authenticateToken, getTaskByTaskId);
  *       500:
  *         description: Internal server error.
  */
-router.post("/:listId/tasks", authenticateToken, createTask);
+router.post(
+  "/:listId/tasks",
+  (req, res, next) => {
+    validateId(req.params.listId);
+    next();
+  },
+  authenticateToken,
+  createTask
+);
 
 /**
  * @swagger
@@ -611,7 +646,15 @@ router.post("/:listId/tasks", authenticateToken, createTask);
  *       500:
  *         description: Internal server error.
  */
-router.patch("/:listId/tasks/:taskId", authenticateToken, updateTask);
+router.patch(
+  "/:listId/tasks/:taskId",
+  (req, res, next) => {
+    validateId(req.params.listId, req.params.taskId);
+    next();
+  },
+  authenticateToken,
+  updateTask
+);
 
 /**
  * @swagger
@@ -676,10 +719,22 @@ router.patch("/:listId/tasks/:taskId", authenticateToken, updateTask);
  *       500:
  *         description: Internal server error.
  */
-router.delete("/:listId/tasks/:taskId", authenticateToken, deleteTask);
+router.delete(
+  "/:listId/tasks/:taskId",
+  (req, res, next) => {
+    validateId(req.params.listId, req.params.taskId);
+    next();
+  },
+  authenticateToken,
+  deleteTask
+);
 
 router.patch(
   "/:listId/tasks/:taskId/check",
+  (req, res, next) => {
+    validateId(req.params.listId, req.params.taskId);
+    next();
+  },
   authenticateToken,
   setTaskCompleted
 );
