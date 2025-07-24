@@ -51,10 +51,9 @@ const updateList = async (req, res) => {
 
   const userId = req.userId;
 
-  // should receive the list updated??
-  await listService.updateByListId(listId, userId, listName);
+  const list = await listService.updateByListId(listId, userId, listName);
 
-  return res.status(200).json({ message: "List updated sucessfuly" });
+  return res.status(200).json({ data: list });
 };
 
 const deleteList = async (req, res) => {
