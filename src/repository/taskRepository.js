@@ -36,23 +36,16 @@ const getByTaskId = async (listId, taskId) => {
   return result;
 };
 
-const updateByTaskId = async (
-  listId,
-  taskId,
-  nameTask,
-  comment,
-  dueDate,
-  completed
-) => {
+const updateByTaskId = async (listId, taskId, nameTask, comment, dueDate) => {
   const text = `
         UPDATE tasks 
         SET 
           name_task = COALESCE($1, name_task),
           comment = COALESCE($2, comment),
           due_date = COALESCE($3, due_date),
-          completed = COALESCE($4, completed)
-        WHERE list_id = $5 AND id = $6`;
-  const values = [nameTask, comment, dueDate, completed, listId, taskId];
+        WHERE list_id = $4 AND id = $5
+        RETURNING *`;
+  const values = [nameTask, comment, dueDate, listId, taskId];
 
   const result = await pool.query(text, values);
   return result;
@@ -65,6 +58,15 @@ const deleteByTaskId = async (listId, taskId) => {
   await pool.query(text, values);
 };
 
+const setCompleted = async (listId, taskId, completed) => {
+  const text =
+    "UPDATE tasks SET completed = $3 WHERE list_id = $1 AND id = $2 RETURNING *";
+  const values = [listId, taskId, completed];
+
+  const result = await pool.query(text, values);
+  return result;
+};
+
 export default {
   countTasksByListId,
   getAllByListId,
@@ -72,4 +74,5 @@ export default {
   getByTaskId,
   updateByTaskId,
   deleteByTaskId,
+  setCompleted,
 };

@@ -19,6 +19,7 @@ import {
   getTaskByTaskId,
   updateTask,
   deleteTask,
+  setTaskCompleted,
 } from "../controllers/taskController.js";
 import authenticateToken from "../middleware/authMiddleware.js";
 import { getAllDataPagination } from "../middleware/PaginationMiddleware.js";
@@ -676,5 +677,11 @@ router.patch("/:listId/tasks/:taskId", authenticateToken, updateTask);
  *         description: Internal server error.
  */
 router.delete("/:listId/tasks/:taskId", authenticateToken, deleteTask);
+
+router.patch(
+  "/:listId/tasks/:taskId/check",
+  authenticateToken,
+  setTaskCompleted
+);
 
 export default router;

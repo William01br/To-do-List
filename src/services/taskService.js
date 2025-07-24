@@ -65,7 +65,6 @@ const updateTaskByTaskId = async (
   nameTask,
   comment,
   dueDate,
-  completed,
   userId
 ) => {
   const list = (await listRepository.listExists(listId, userId)).rows[0].exists;
@@ -73,15 +72,13 @@ const updateTaskByTaskId = async (
     throw new NotFoundErrorHttp({
       message: "List not found",
     });
-  // tem que editar esse completed
-  // adicionar uma rota só para check
+
   const result = await taskRepository.updateByTaskId(
     listId,
     taskId,
     nameTask,
     comment,
-    dueDate,
-    completed
+    dueDate
   );
 
   if (result.rows.length === 0)
@@ -89,8 +86,7 @@ const updateTaskByTaskId = async (
       message: "Task not found",
     });
 
-  // should return the task updated
-  return result.rowCount;
+  return result.rows[0];
 };
 
 const deleteTaskByTaskId = async (listId, taskId, userId) => {
@@ -104,6 +100,22 @@ const deleteTaskByTaskId = async (listId, taskId, userId) => {
   await taskRepository.deleteByTaskId(listId, taskId);
 };
 
+const setTaskCompleted = async (userId, listId, taskId, completed) => {
+  const list = (await listRepository.listExists(listId, userId)).rows[0].exists;
+  if (!list)
+    throw new NotFoundErrorHttp({
+      message: "List not found",
+    });
+
+  const task = await taskRepository.setCompleted(listId, taskId, completed);
+  // whether the task is not updated, probably don't exists.
+  if (task.rowCount === 0)
+    throw new NotFoundErrorHttp({
+      message: "Task not found",
+    });
+  return task.rows[0];
+};
+
 export default {
   getAllTasksByListId,
   createTask,
@@ -111,4 +123,5 @@ export default {
   updateTaskByTaskId,
   deleteTaskByTaskId,
   getCountTasksByListId,
+  setTaskCompleted,
 };
