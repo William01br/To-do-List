@@ -19,6 +19,8 @@ const getAllTasks = async (req, res) => {
   return res.status(200).json({ nextUrl, previousUrl, data: result });
 };
 
+// TRANSFORMAR EM FORMATO ISO NO SERVICE OU EM ALGUM MIDDLEWARE AO INVÉS DE MANDAR NO FORMATO DIRETO NO BODY.
+// NA VERDADE, O FRONT JÁ MANDA NO FORMATO, AQUI SÓ VALIDAMOS.
 const createTask = async (req, res) => {
   const { nameTask, comment, dueDate } = req.body;
   if (!nameTask || !comment || !dueDate)

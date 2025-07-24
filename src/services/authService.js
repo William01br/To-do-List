@@ -1,10 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { pool } from "../config/db.js";
 import dotenv from "dotenv";
+
+import { pool } from "../config/db.js";
 import InternalErrorHttp from "../errors/InternalError.js";
 import BadRequestErrorHttp from "../errors/BadRequestError.js";
 import NotFoundErrorHttp from "../errors/NotFoundError.js";
+import authRepository from "../repository/authRepository.js";
+import userRepository from "../repository/userRepository.js";
 dotenv.config();
 
 const generateAccessToken = (userId) =>
@@ -25,11 +28,7 @@ const storeRefreshToken = async (userId, hashedRefreshToken) => {
   const expiresAt = new Date(Date.now() + daysToMilliseconds(7));
   const updatedAt = new Date(Date.now());
 
-  const text =
-    "INSERT INTO refresh_tokens (user_id, refresh_token, expires_at, updated_at) VALUES ($1, $2, $3, $4)";
-  const values = [userId, hashedRefreshToken, expiresAt, updatedAt];
-
-  await pool.query(text, values);
+  await authRepository.create(userId, hashedRefreshToken, expiresAt, updatedAt);
 };
 
 /**
@@ -55,7 +54,7 @@ const getTokens = async (userId) => {
 };
 
 const login = async (email, password) => {
-  const user = await getUserByEmail(email);
+  const user = (await userRepository.getByEmail(email)).rows[0];
   if (!user)
     throw new NotFoundErrorHttp({
       message: "E-mail not found",
@@ -68,20 +67,14 @@ const login = async (email, password) => {
   return user.id;
 };
 
-const getUserByEmail = async (email) => {
-  const text = "SELECT * FROM users WHERE email = $1";
-
-  const result = await pool.query(text, [email]);
-  return result.rows[0];
-};
-
 // Receive a refresh token and creates a new acess token.
 const getAccessToken = async (refreshToken, userId) => {
   /**
    * E o ExpiredAt? NÃO HÁ VERIFICAÇÃO SOBRE A EXPIRAÇÃO DO TOKEN, SÓ SE ELE EXISTE OU NÃO
    * TEM QUE REVER ISSO.
    */
-  const storedToken = await getRefreshTokenByUserId(userId);
+  const storedToken = (await authRepository.findRefreshTokenByUserId(userId))
+    .rows[0];
   if (!storedToken)
     throw new NotFoundErrorHttp({
       message: "Refresh token not found",
@@ -97,18 +90,8 @@ const getAccessToken = async (refreshToken, userId) => {
   return generateAccessToken(userId);
 };
 
-const getRefreshTokenByUserId = async (userId) => {
-  const text =
-    "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1";
-
-  const result = await pool.query(text, [userId]);
-  return result.rows[0];
-};
-
 const deleteRefreshToken = async (userId) => {
-  const text = "DELETE FROM refresh_tokens WHERE user_id = $1";
-
-  await pool.query(text, [userId]);
+  await authRepository.deleteByUserId(userId);
 };
 
 export default {
@@ -116,7 +99,5 @@ export default {
   getAccessToken,
   getTokens,
   deleteRefreshToken,
-  getUserByEmail,
-  getRefreshTokenByUserId,
   generateAccessToken,
 };
