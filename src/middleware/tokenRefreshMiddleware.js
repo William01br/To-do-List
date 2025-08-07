@@ -2,9 +2,7 @@ import jwt from "jsonwebtoken";
 import UnauthorizedErrorHttp from "../errors/UnauthorizedError.js";
 
 const verifyExpirationToken = (req, res, next) => {
-  // Extract the token from the signed cookies.
   const refreshToken = req.signedCookies.refreshToken;
-  console.log(refreshToken);
 
   if (!refreshToken)
     throw new UnauthorizedErrorHttp({
