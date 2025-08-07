@@ -3,6 +3,7 @@ import taskService from "../../../src/services/taskService.js";
 import taskRepository from "../../../src/repository/taskRepository.js";
 import NotFoundErrorHttp from "../../../src/errors/NotFoundError.js";
 import listRepository from "../../../src/repository/listRepository.js";
+import { mockUser } from "passport-mock-strategy";
 
 jest.mock("../../../src/config/db.js", () => ({
   pool: {
@@ -82,6 +83,39 @@ describe("task service", () => {
 
       expect(result).toStrictEqual([taskMock]);
       expect(taskRepository.getAllByListId).toHaveBeenCalledWith(1, 10, 0);
+    });
+  });
+  describe("create task", () => {
+    it("should propagate error NotFoundErrorHttp when the list is not found", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: false }],
+      });
+
+      await expect(taskService.createTask(1, 1, 10, 0)).rejects.toBeInstanceOf(
+        NotFoundErrorHttp
+      );
+    });
+    it("should create and return the list successfully", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.create.mockResolvedValue({ rows: [taskMock] });
+
+      const result = await taskService.createTask(
+        taskMock.nameTask,
+        taskMock.comment,
+        taskMock.due_date,
+        taskMock.listId,
+        1
+      );
+
+      expect(result).toBe(taskMock);
+      expect(taskRepository.create).toHaveBeenCalledWith(
+        taskMock.nameTask,
+        taskMock.comment,
+        taskMock.due_date,
+        taskMock.listId
+      );
     });
   });
 });
