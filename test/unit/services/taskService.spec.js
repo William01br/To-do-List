@@ -118,6 +118,38 @@ describe("task service", () => {
       );
     });
   });
+  describe("get task", () => {
+    it("should propagate error NotFoundErrorHttp when the list is not found", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: false }],
+      });
+
+      await expect(taskService.getTaskByTaskId(1, 1, 1)).rejects.toBeInstanceOf(
+        NotFoundErrorHttp
+      );
+    });
+    it("should propagate NotFoundErrorHttp when the task not exist", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.getByTaskId.mockResolvedValue({ rows: [] });
+
+      await expect(taskService.getTaskByTaskId(1, 1, 1)).rejects.toBeInstanceOf(
+        NotFoundErrorHttp
+      );
+    });
+    it("should return the task successfully", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.getByTaskId.mockResolvedValue({ rows: [taskMock] });
+
+      const result = await taskService.getTaskByTaskId(1, 1, 1);
+
+      expect(result).toBe(taskMock);
+      expect(taskRepository.getByTaskId).toHaveBeenCalledWith(1, 1);
+    });
+  });
 });
 
 // describe("verify List exist", () => {
