@@ -35,7 +35,7 @@ const taskMock = {
   id: 1,
   nameTask: "test",
   comment: "testing",
-  due_date: "2025-08-06T10:00:00Z",
+  dueDate: "2025-08-06T10:00:00Z",
   completed: false,
   listId: 1,
   createAt: "2025-04-06T10:00:00Z",
@@ -104,7 +104,7 @@ describe("task service", () => {
       const result = await taskService.createTask(
         taskMock.nameTask,
         taskMock.comment,
-        taskMock.due_date,
+        taskMock.dueDate,
         taskMock.listId,
         1
       );
@@ -113,7 +113,7 @@ describe("task service", () => {
       expect(taskRepository.create).toHaveBeenCalledWith(
         taskMock.nameTask,
         taskMock.comment,
-        taskMock.due_date,
+        taskMock.dueDate,
         taskMock.listId
       );
     });
@@ -148,6 +148,58 @@ describe("task service", () => {
 
       expect(result).toBe(taskMock);
       expect(taskRepository.getByTaskId).toHaveBeenCalledWith(1, 1);
+    });
+  });
+  describe("update task", () => {
+    it("should propagate error NotFoundErrorHttp when the list is not found", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: false }],
+      });
+
+      await expect(
+        taskService.updateTaskByTaskId(1, 1, 1)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should propagate NotFoundErrorHttp when the task not exist", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.updateByTaskId.mockResolvedValue({ rows: [] });
+
+      await expect(
+        taskService.updateTaskByTaskId(
+          taskMock.listId,
+          taskMock.id,
+          taskMock.nameTask,
+          taskMock.comment,
+          taskMock.dueDate,
+          1
+        )
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should update and return the task successfully", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.updateByTaskId.mockResolvedValue({ rows: [taskMock] });
+
+      const result = await taskService.updateTaskByTaskId(
+        taskMock.listId,
+        taskMock.id,
+        taskMock.nameTask,
+        taskMock.comment,
+        taskMock.dueDate,
+        1
+      );
+
+      expect(result).toBe(taskMock);
+      expect(taskRepository.updateByTaskId).toHaveBeenCalledWith(
+        1,
+        taskMock.listId,
+        taskMock.nameTask,
+        taskMock.comment,
+        taskMock.dueDate
+      );
     });
   });
 });
