@@ -7,6 +7,7 @@ import InternalErrorHttp from "../../../src/errors/InternalError.js";
 import userRepository from "../../../src/repository/userRepository.js";
 import NotFoundErrorHttp from "../../../src/errors/NotFoundError.js";
 import UnauthorizedErrorHttp from "../../../src/errors/UnauthorizedError.js";
+import BadRequestErrorHttp from "../../../src/errors/BadRequestError.js";
 
 jest.mock("bcrypt", () => ({
   __esModule: true,
@@ -15,12 +16,6 @@ jest.mock("bcrypt", () => ({
     hash: jest.fn(),
   },
 }));
-
-// jest.mock("../../../src/config/db.js", () => ({
-//   pool: {
-//     query: jest.fn(),
-//   },
-// }));
 
 jest.mock("jsonwebtoken", () => ({
   __esModule: true,
@@ -109,140 +104,38 @@ describe("auth service", () => {
       expect(result).toBe(mockUser.id);
     });
   });
+  describe("get access token", () => {
+    it("should propagate NotFoundErrorHttp when the refresh token was not found or expired", async () => {
+      authRepository.findRefreshTokenByUserId.mockResolvedValue({ rows: [] });
+
+      await expect(
+        authService.getAccessToken("invalidRefreshToken", 1)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should propagate BadRequestErrorHttp when the refresh token is invalid", async () => {
+      authRepository.findRefreshTokenByUserId.mockResolvedValue({
+        rows: [{ refresh_token: "hashRefreshToken" }],
+      });
+      bcrypt.compare.mockReturnValueOnce(false);
+
+      await expect(
+        authService.getAccessToken("invalidRefreshToken", 1)
+      ).rejects.toBeInstanceOf(BadRequestErrorHttp);
+    });
+    it("should return the access token when the refresh token is valid", async () => {
+      authRepository.findRefreshTokenByUserId.mockResolvedValue({
+        rows: [{ refresh_token: "hashRefreshToken" }],
+      });
+      bcrypt.compare.mockReturnValueOnce(true);
+      jwt.sign.mockReturnValueOnce("newAccessToken");
+
+      const result = await authService.getAccessToken("validRefreshToken", 1);
+
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        "validRefreshToken",
+        "hashRefreshToken"
+      );
+      expect(result).toBe("newAccessToken");
+    });
+  });
 });
-
-// describe("function Login of authService", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should return null if password does not match", async () => {
-//     pool.query.mockResolvedValue({ rows: [] });
-
-//     const result = await authService.login(
-//       "nonexistent@example.com",
-//       "password"
-//     );
-//     expect(result).toBeNull();
-//     expect(pool.query).toHaveBeenCalledWith(
-//       "SELECT * FROM users WHERE email = $1",
-//       ["nonexistent@example.com"]
-//     );
-//   });
-
-//   it("should return null if password does not match", async () => {
-//     pool.query.mockResolvedValue({
-//       rows: [{ id: 1, email: "test@example.com", password: "hashedPassword" }],
-//     });
-
-//     bcrypt.compare.mockResolvedValue(false);
-
-//     const result = await authService.login("test@example.com", "wrongpassword");
-
-//     expect(result).toBeNull();
-//     expect(bcrypt.compare).toHaveBeenCalledWith(
-//       "wrongpassword",
-//       "hashedPassword"
-//     );
-//   });
-
-//   it("should return user id if email and password are correct", async () => {
-//     pool.query.mockResolvedValue({
-//       rows: [{ id: 1, email: "test@example.com", password: "hashedPassword" }],
-//     });
-
-//     bcrypt.compare.mockResolvedValue(true);
-
-//     const result = await authService.login(
-//       "test@example.com",
-//       "correctPassword"
-//     );
-
-//     expect(result).toBe(1);
-//     expect(bcrypt.compare).toHaveBeenCalledWith(
-//       "correctPassword",
-//       "hashedPassword"
-//     );
-//   });
-
-//   it("should throw an error if getUserByEmail fails", async () => {
-//     pool.query.mockRejectedValue(new Error("Database error"));
-
-//     await expect(
-//       authService.login("test@example.com", "password")
-//     ).rejects.toThrow("Error when logging in user");
-//   });
-// });
-
-// describe("function getAcessToken of authService", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should return null if no token is available", async () => {
-//     pool.query.mockResolvedValue({ rows: [] });
-
-//     const result = await authService.getAcessToken("revokedRefreshToken", 1);
-//     expect(result).toBeNull();
-//     expect(pool.query).toHaveBeenCalledWith(
-//       "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1",
-//       [1]
-//     );
-//   });
-
-//   it("should return null if refresh token does not match", async () => {
-//     pool.query.mockResolvedValue({
-//       rows: [{ refresh_token: "hashRefreshToken", user_id: 1 }],
-//     });
-
-//     bcrypt.compare.mockResolvedValue(false);
-
-//     const result = await authService.getAcessToken("invalidRefreshToken", 1);
-
-//     expect(result).toBeNull();
-//     expect(bcrypt.compare).toHaveBeenCalledWith(
-//       "invalidRefreshToken",
-//       "hashRefreshToken"
-//     );
-//   });
-
-//   it("should return acess token if the refresh token matches", async () => {
-//     pool.query.mockResolvedValue({
-//       rows: [
-//         {
-//           refresh_token: "hashRefreshToken",
-//           user_id: 1,
-//         },
-//       ],
-//     });
-
-//     bcrypt.compare.mockResolvedValue(true);
-
-//     jwt.sign.mockResolvedValue("acess token");
-
-//     const result = await authService.getAcessToken("refreshToken", 1);
-
-//     expect(pool.query).toHaveBeenCalledWith(
-//       "SELECT refresh_token FROM refresh_tokens WHERE user_id = $1 AND revoked = false LIMIT 1",
-//       [1]
-//     );
-//     expect(bcrypt.compare).toHaveBeenCalledWith(
-//       "refreshToken",
-//       "hashRefreshToken"
-//     );
-//     expect(jwt.sign).toHaveBeenCalledWith(
-//       { userId: 1 },
-//       process.env.ACESS_TOKEN_SECRET,
-//       { expiresIn: "1h" }
-//     );
-//     expect(result).toBe("acess token");
-//   });
-
-//   it("should throw an error if getRefreshTokenByUserId fails", async () => {
-//     pool.query.mockRejectedValue(new Error("Database error"));
-
-//     await expect(
-//       authService.getAcessToken("invalidRefreshToken", 1)
-//     ).rejects.toThrow("Error getting acess token");
-//   });
-// });
