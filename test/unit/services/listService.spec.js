@@ -130,6 +130,17 @@ describe("list service", () => {
       );
     });
   });
+  describe("delete list", () => {
+    it("should propagate error message when throws any unexpected error", async () => {
+      listRepository.deleteByListId.mockRejectedValue(
+        new Error("Internal server error")
+      );
+
+      await expect(listService.deleteListByListId(1, 1)).rejects.toThrow(
+        "Internal server error"
+      );
+    });
+  });
 });
 
 /*
