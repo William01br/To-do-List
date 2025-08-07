@@ -222,341 +222,41 @@ describe("task service", () => {
       );
     });
   });
+  describe("set task like completed", () => {
+    it("should propagate error NotFoundErrorHttp when the list is not found", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: false }],
+      });
+
+      await expect(
+        taskService.setTaskCompleted(1, 1, 1, true)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should propagate NotFoundErrorHttp whe the task is not found", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.setCompleted.mockResolvedValue({
+        rowCount: 0,
+      });
+
+      await expect(
+        taskService.setTaskCompleted(1, 1, 1, true)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should mark the task like completed and return the task successfully", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.setCompleted.mockResolvedValue({
+        rowCount: 1,
+        rows: [taskMock],
+      });
+
+      const result = await taskService.setTaskCompleted(1, 1, 1, true);
+
+      expect(result).toBe(taskMock);
+      expect(taskRepository.setCompleted).toHaveBeenCalledWith(1, 1, true);
+    });
+  });
 });
-
-// describe("verify List exist", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should return true if the list exists", async () => {
-//     pool.query.mockResolvedValue({ rows: [{ exists: true }] });
-
-//     const result = await taskService.verifyListExist(1, 1);
-
-//     expect(result).toBeTruthy();
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//     expect(pool.query).toHaveBeenCalledWith(
-//       `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`,
-//       [1, 1]
-//     );
-//   });
-
-//   it("should return false if the list does not exist", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: false }] });
-
-//     const result = await taskService.verifyListExist(1, 1);
-
-//     expect(result).toBeFalsy();
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//     expect(pool.query).toHaveBeenCalledWith(
-//       `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`,
-//       [1, 1]
-//     );
-//   });
-
-//   it("must be to throw an unexpected error occurs in database", async () => {
-//     pool.query.mockRejectedValue(new Error("Unexpected database error"));
-
-//     await expect(taskService.verifyListExist(1, 1)).rejects.toThrow(
-//       "Unexpected database error"
-//     );
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//     expect(pool.query).toHaveBeenCalledWith(
-//       `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`,
-//       [1, 1]
-//     );
-//   });
-// });
-
-// describe("get all tasks by list Id", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should return all tasks", async () => {
-//     const mockTasks = [
-//       {
-//         id: 2,
-//         name_task: "Task 2",
-//         comment: "Task 2 comment",
-//         due_date: "2023-01-01",
-//         completed: true,
-//       },
-//       {
-//         id: 1,
-//         name_task: "Task 1",
-//         comment: "Task 1 comment",
-//         due_date: "2022-12-31",
-//         completed: false,
-//       },
-//     ];
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockResolvedValueOnce({ rows: mockTasks });
-
-//     const result = await taskService.getAllTasksByListId(1, 1, 10, 0);
-
-//     expect(result).toBe(mockTasks);
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenNthCalledWith(
-//       1,
-//       "SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)",
-//       [1, 1]
-//     );
-//   });
-
-//   it("should return null if the list not exists", async () => {
-//     pool.query.mockResolvedValue({ rows: [{ exists: false }] });
-
-//     const result = await taskService.getAllTasksByListId(1, 1);
-
-//     expect(result).toBe(null);
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//   });
-
-//   it("an error should be thrown if an unexpected event occurs in the database", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockRejectedValueOnce(new Error("database error"));
-
-//     await expect(taskService.getAllTasksByListId(1, 1, 10, 0)).rejects.toThrow(
-//       "Failed to get tasks by listId"
-//     );
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenNthCalledWith(
-//       1,
-//       "SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)",
-//       [1, 1]
-//     );
-//   });
-// });
-
-// describe("create task", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should create a new task and return the task", async () => {
-//     const mockTask = {
-//       id: 1,
-//       name_task: "Task 1",
-//       comment: "Task 1 comment",
-//       due_date: "2022-12-31",
-//       completed: false,
-//     };
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockResolvedValueOnce({ rows: [mockTask] });
-
-//     const result = await taskService.createTask(
-//       "Task 1",
-//       "Task 1 comment",
-//       "2022-12-31",
-//       1,
-//       1
-//     );
-
-//     expect(result).toBe(mockTask);
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenCalledWith(
-//       `INSERT INTO tasks (name_task, comment, due_date, list_id) VALUES ($1, $2, $3, $4) RETURNING *`,
-//       ["Task 1", "Task 1 comment", "2022-12-31", 1]
-//     );
-//   });
-
-//   it("should return null if the list not exists", async () => {
-//     pool.query.mockResolvedValue({ rows: [{ exists: false }] });
-
-//     const result = await taskService.createTask(1, 1);
-
-//     expect(result).toBe(null);
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//   });
-
-//   it("an error should be thrown if an unexpected event occurs in the database", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockRejectedValueOnce(new Error("database error"));
-
-//     await expect(
-//       taskService.createTask("Task 1", "Task 1 comment", "2022-12-31", 1, 1)
-//     ).rejects.toThrow("Failed to create task");
-
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenCalledWith(
-//       `INSERT INTO tasks (name_task, comment, due_date, list_id) VALUES ($1, $2, $3, $4) RETURNING *`,
-//       ["Task 1", "Task 1 comment", "2022-12-31", 1]
-//     );
-//   });
-// });
-
-// describe("get task by id", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should return a task", async () => {
-//     const mockTask = [
-//       {
-//         id: 1,
-//         name_task: "Task 1",
-//         comment: "Task 1 comment",
-//         due_date: "2022-12-31",
-//         completed: false,
-//       },
-//     ];
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockResolvedValueOnce({ rows: mockTask });
-
-//     const result = await taskService.getTaskByTaskId(1, 1);
-
-//     expect(result).toBe(mockTask);
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenCalledWith(
-//       `SELECT * FROM tasks WHERE list_id = $1 AND id = $2`,
-//       [1, 1]
-//     );
-//   });
-
-//   it("should return null if list not exists", async () => {
-//     pool.query.mockResolvedValue({ rows: [{ exists: false }] });
-
-//     const result = await taskService.getTaskByTaskId(1, 1);
-
-//     expect(result).toBe(null);
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//   });
-
-//   it("an error should be thrown if an unexpected event occurs in the database", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockRejectedValueOnce(new Error("database error"));
-
-//     await expect(taskService.getTaskByTaskId(1, 1)).rejects.toThrow(
-//       "Failed to get task by taskId"
-//     );
-
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenCalledWith(
-//       `SELECT * FROM tasks WHERE list_id = $1 AND id = $2`,
-//       [1, 1]
-//     );
-//   });
-// });
-
-// describe("update task by id", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should update task and return the amount of rows affected", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockResolvedValueOnce({ rowCount: 1 });
-
-//     const result = await taskService.updateTaskByTaskId(
-//       1,
-//       1,
-//       "Updated Task 1",
-//       "Updated Task 1 comment",
-//       "2023-01-01",
-//       false,
-//       1
-//     );
-
-//     expect(result).toBe(1);
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenNthCalledWith(
-//       1,
-//       `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1 AND user_id = $2)`,
-//       [1, 1]
-//     );
-//     expect(pool.query).toHaveBeenNthCalledWith(
-//       2,
-//       expect.stringContaining("UPDATE tasks"),
-//       ["Updated Task 1", "Updated Task 1 comment", "2023-01-01", false, 1, 1]
-//     );
-//   });
-
-//   it("shoul return null if the list not exists", async () => {
-//     pool.query.mockResolvedValue({ rows: [{ exists: false }] });
-
-//     const result = await taskService.updateTaskByTaskId(
-//       1,
-//       1,
-//       "Updated Task 1",
-//       "Updated Task 1 comment",
-//       "2023-01-01",
-//       false,
-//       1
-//     );
-
-//     expect(result).toBe(null);
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//   });
-
-//   it("an error should be thrown if an unexpected event occurs in the database", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockRejectedValueOnce(new Error("database error"));
-
-//     await expect(
-//       taskService.updateTaskByTaskId(
-//         1,
-//         1,
-//         "Updated Task 1",
-//         "Updated Task 1 comment",
-//         "2023-01-01",
-//         false,
-//         1
-//       )
-//     ).rejects.toThrow("Failed to update task by taskId");
-
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenNthCalledWith(
-//       2,
-//       expect.stringContaining("UPDATE tasks"),
-//       ["Updated Task 1", "Updated Task 1 comment", "2023-01-01", false, 1, 1]
-//     );
-//   });
-// });
-
-// describe("delete task by id", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should delete task and return the amount of rows affected", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockResolvedValueOnce({ rowCount: 1 });
-
-//     const result = await taskService.deleteTaskByTaskId(1, 1);
-
-//     expect(result).toBe(1);
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenNthCalledWith(
-//       2,
-//       `DELETE FROM tasks WHERE list_id = $1 AND id = $2`,
-//       [1, 1]
-//     );
-//   });
-
-//   it("should return null if the list not exists", async () => {
-//     pool.query.mockResolvedValue({ rows: [{ exists: false }] });
-
-//     const result = await taskService.deleteTaskByTaskId(1, 1);
-
-//     expect(result).toBe(null);
-//     expect(pool.query).toHaveBeenCalledTimes(1);
-//   });
-
-//   it("an error should be thrown if an unexpected event occurs in the database", async () => {
-//     pool.query.mockResolvedValueOnce({ rows: [{ exists: true }] });
-//     pool.query.mockRejectedValueOnce(new Error("database error"));
-
-//     await expect(taskService.deleteTaskByTaskId(1, 1)).rejects.toThrow(
-//       "Failed to delete task by taskId"
-//     );
-
-//     expect(pool.query).toHaveBeenCalledTimes(2);
-//     expect(pool.query).toHaveBeenNthCalledWith(
-//       2,
-//       `DELETE FROM tasks WHERE list_id = $1 AND id = $2`,
-//       [1, 1]
-//     );
-//   });
-// });
