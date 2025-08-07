@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 import authService from "../../../src/services/authService.js";
 import authRepository from "../../../src/repository/authRepository.js";
 import InternalErrorHttp from "../../../src/errors/InternalError.js";
+import userRepository from "../../../src/repository/userRepository.js";
+import NotFoundErrorHttp from "../../../src/errors/NotFoundError.js";
+import UnauthorizedErrorHttp from "../../../src/errors/UnauthorizedError.js";
 
 jest.mock("bcrypt", () => ({
   __esModule: true,
@@ -32,6 +35,22 @@ jest.mock("../../../src/repository/authRepository.js", () => ({
   deleteByUserId: jest.fn(),
 }));
 
+jest.mock("../../../src/repository/userRepository.js", () => ({
+  __esModule: true,
+  default: {
+    getByEmail: jest.fn(),
+  },
+}));
+
+const mockUser = {
+  id: 1,
+  username: "john doe",
+  email: "john.doe123@example.com",
+  avatarUrl: "avatarUrl.png",
+  password: "hashPassword",
+  createdAt: "2025-08-06T10:00:00Z",
+};
+
 describe("auth service", () => {
   describe("get tokens", () => {
     it("should propagate InternalErrrorHttp when the tokens are not genereted", async () => {
@@ -56,6 +75,38 @@ describe("auth service", () => {
         accessToken: "access token",
         refreshToken: "refresh token",
       });
+    });
+  });
+  describe("login", () => {
+    it("should propagate NotFoundErrorHttp when the e-mail is not found", async () => {
+      userRepository.getByEmail.mockResolvedValue({ rows: [] });
+
+      await expect(
+        authService.login("example123@example.com", "passWord123#")
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should propagate UnauthorizedErrorHttp when the credentials are invalid", async () => {
+      userRepository.getByEmail.mockResolvedValue({ rows: [mockUser] });
+      bcrypt.compare.mockReturnValueOnce(false);
+
+      await expect(
+        authService.login(mockUser.email, "passWord123#")
+      ).rejects.toBeInstanceOf(UnauthorizedErrorHttp);
+    });
+    it("should return user id when the credentials are valid", async () => {
+      userRepository.getByEmail.mockResolvedValue({ rows: [mockUser] });
+      bcrypt.compare.mockReturnValueOnce(true);
+
+      const result = await authService.login(
+        mockUser.email,
+        "correctPassword123#"
+      );
+
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        "correctPassword123#",
+        mockUser.password
+      );
+      expect(result).toBe(mockUser.id);
     });
   });
 });
