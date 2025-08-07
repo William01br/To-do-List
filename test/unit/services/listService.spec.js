@@ -90,6 +90,23 @@ describe("list service", () => {
       expect(listRepository.getAllByUserId).toHaveBeenCalledWith(1, 10, 0);
     });
   });
+  describe("get list", () => {
+    it("should propagate NotFoundErrorHttp when the list is not found", async () => {
+      listRepository.getListByListId.mockResolvedValue({ rows: [] });
+
+      await expect(
+        listService.getListByListId(1, 10, 0)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should return the list of user", async () => {
+      listRepository.getListByListId.mockResolvedValue({ rows: [mockList] });
+
+      const result = await listService.getListByListId(1, 10, 0);
+
+      expect(result).toBe(mockList);
+      expect(listRepository.getListByListId).toHaveBeenCalledWith(1, 10, 0);
+    });
+  });
 });
 
 /*
