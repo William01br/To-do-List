@@ -1,4 +1,4 @@
-// import bcrypt from "bcrypt";
+import bcrypt from "bcrypt";
 
 import userService from "../../../src/services/userService.js";
 import userRepository from "../../../src/repository/userRepository.js";
@@ -7,10 +7,7 @@ import InternalErrorHttp from "../../../src/errors/InternalError.js";
 import { createTokenReset } from "../../../src/utils/crypto.js";
 import { createMessageEmail } from "../../../src/utils/createMessageEmail.js";
 import { transporter } from "../../../src/config/nodemailer.js";
-
-jest.mock("bcrypt", () => ({
-  hash: jest.fn(),
-}));
+import BadRequestErrorHttp from "../../../src/errors/BadRequestError.js";
 
 jest.mock("../../../src/repository/userRepository.js", () => ({
   __esModule: true,
@@ -27,6 +24,10 @@ jest.mock("../../../src/repository/userRepository.js", () => ({
     deleteByUserId: jest.fn(),
     getByEmail: jest.fn(),
   },
+}));
+
+jest.mock("bcrypt", () => ({
+  hash: jest.fn(),
 }));
 
 jest.mock("../../../src/config/db.js", () => ({
@@ -164,6 +165,65 @@ describe("userService", () => {
         "localhost:3000/user/reset-password/TOKENXYZ"
       );
       expect(transporter.sendMail).toHaveBeenCalled();
+    });
+  });
+  describe("reset password", () => {
+    it("should propagate BadRequestErrorHttp when the token has expired", async () => {
+      userRepository.verifyExpirationToken.mockResolvedValue({ rows: [] });
+
+      await expect(userRepository.updatePassword).not.toHaveBeenCalled();
+      await expect(
+        userService.resetPassword("newPass", "TOKENXYZ")
+      ).rejects.toBeInstanceOf(BadRequestErrorHttp);
+    });
+    it("should propagate InternalErrorHttp when the password has not updated", async () => {
+      userRepository.verifyExpirationToken.mockResolvedValue({
+        rows: [
+          {
+            reset_password_token: "TOKENXYZ",
+          },
+        ],
+      });
+      userRepository.updatePassword.mockResolvedValue({ rowCount: 0 });
+
+      await expect(
+        userService.resetPassword("newPass", "TOKENXYZ")
+      ).rejects.toBeInstanceOf(InternalErrorHttp);
+    });
+    it("token is valid and tokens are updated", async () => {
+      userRepository.verifyExpirationToken.mockResolvedValue({
+        rows: [
+          {
+            reset_password_token: "TOKENXYZ",
+          },
+        ],
+      });
+      userRepository.updatePassword.mockResolvedValue({ rowCount: 1 });
+      bcrypt.hash.mockResolvedValue("hashPassword");
+
+      const result = await userService.resetPassword("newPass", "TOKENXYZ");
+
+      expect(userRepository.updatePassword).toHaveBeenCalledWith(
+        "hashPassword",
+        "TOKENXYZ"
+      );
+      expect(result).toBe(true);
+    });
+  });
+  describe("get all user data", () => {
+    it("should propagate BadRequestErrorHttp when the user not exist", async () => {
+      userRepository.getAllByUserId.mockResolvedValue({ rows: [] });
+
+      await expect(
+        userService.getAllDataUserByUserId(1)
+      ).rejects.toBeInstanceOf(BadRequestErrorHttp);
+    });
+    it("should return all data successfully", async () => {
+      userRepository.getAllByUserId.mockResolvedValue(mockUser);
+
+      const result = await userService.getAllDataUserByUserId(1);
+
+      expect(result).toBe(mockUser.rows[0]);
     });
   });
 });
