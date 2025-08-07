@@ -202,6 +202,26 @@ describe("task service", () => {
       );
     });
   });
+  describe("delete task", () => {
+    it("should propagate error NotFoundErrorHttp when the list is not found", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: false }],
+      });
+
+      await expect(
+        taskService.deleteTaskByTaskId(1, 1, 1)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should propagate error message when throws any unexpected error", async () => {
+      listRepository.listExists.mockRejectedValue(
+        new Error("Internal server error")
+      );
+
+      await expect(taskService.deleteTaskByTaskId(1, 1, 1)).rejects.toThrow(
+        "Internal server error"
+      );
+    });
+  });
 });
 
 // describe("verify List exist", () => {
