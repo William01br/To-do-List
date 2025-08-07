@@ -2,6 +2,7 @@ import { pool } from "../../../src/config/db.js";
 import taskService from "../../../src/services/taskService.js";
 import taskRepository from "../../../src/repository/taskRepository.js";
 import NotFoundErrorHttp from "../../../src/errors/NotFoundError.js";
+import listRepository from "../../../src/repository/listRepository.js";
 
 jest.mock("../../../src/config/db.js", () => ({
   pool: {
@@ -22,6 +23,23 @@ jest.mock("../../../src/repository/taskRepository.js", () => ({
   },
 }));
 
+jest.mock("../../../src/repository/listRepository.js", () => ({
+  __esModule: true,
+  default: {
+    listExists: jest.fn(),
+  },
+}));
+
+const taskMock = {
+  id: 1,
+  nameTask: "test",
+  comment: "testing",
+  due_date: "2025-08-06T10:00:00Z",
+  completed: false,
+  listId: 1,
+  createAt: "2025-04-06T10:00:00Z",
+};
+
 describe("task service", () => {
   describe("get count task", () => {
     it("should count the amount of task in a list", async () => {
@@ -32,6 +50,38 @@ describe("task service", () => {
       const result = await taskService.getCountTasksByListId(1);
 
       expect(result).toBe(1);
+    });
+  });
+  describe("get all tasks", () => {
+    it("should propagate error NotFoundErrorHttp when the list is not found", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: false }],
+      });
+
+      await expect(
+        taskService.getAllTasksByListId(1, 1, 10, 0)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should propagate error NotFoundErrorhttp when there is no tasks", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.getAllByListId.mockResolvedValue({ rows: [] });
+
+      await expect(
+        taskService.getAllTasksByListId(1, 1, 10, 0)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should return all tasks successfully", async () => {
+      listRepository.listExists.mockResolvedValue({
+        rows: [{ exists: true }],
+      });
+      taskRepository.getAllByListId.mockResolvedValue({ rows: [taskMock] });
+
+      const result = await taskService.getAllTasksByListId(1, 1, 10, 0);
+
+      expect(result).toStrictEqual([taskMock]);
+      expect(taskRepository.getAllByListId).toHaveBeenCalledWith(1, 10, 0);
     });
   });
 });
