@@ -2,6 +2,7 @@ import { pool } from "../../../src/config/db.js";
 import listService from "../../../src/services/listService.js";
 import listRepository from "../../../src/repository/listRepository.js";
 import InternalErrorHttp from "../../../src/errors/InternalError.js";
+import NotFoundErrorHttp from "../../../src/errors/NotFoundError.js";
 
 jest.mock("../../../src/config/db.js", () => ({
   pool: {
@@ -70,6 +71,23 @@ describe("list service", () => {
 
       expect(result).toBe(mockList);
       expect(listRepository.createList).toHaveBeenCalledWith("test", 1);
+    });
+  });
+  describe("get all lists", () => {
+    it("should propagate NotFoundErrorHttp when the user is not found", async () => {
+      listRepository.getAllByUserId.mockResolvedValue({ rows: [] });
+
+      await expect(
+        listService.getAllListsByUserId(1, 10, 0)
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should return all lists of user", async () => {
+      listRepository.getAllByUserId.mockResolvedValue({ rows: [mockList] });
+
+      const result = await listService.getAllListsByUserId(1, 10, 0);
+
+      expect(result).toStrictEqual([mockList]);
+      expect(listRepository.getAllByUserId).toHaveBeenCalledWith(1, 10, 0);
     });
   });
 });
