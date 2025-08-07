@@ -107,6 +107,29 @@ describe("list service", () => {
       expect(listRepository.getListByListId).toHaveBeenCalledWith(1, 10, 0);
     });
   });
+  describe("update list", () => {
+    it("should propagate NotFoundError when the list is not found", async () => {
+      listRepository.updateByListId.mockResolvedValue({ rowCount: 0 });
+
+      await expect(
+        listService.updateByListId(1, 1, "test two")
+      ).rejects.toBeInstanceOf(NotFoundErrorHttp);
+    });
+    it("should update the list successfully and return the list", async () => {
+      listRepository.updateByListId.mockResolvedValue({
+        rows: [{ title: "test two" }],
+      });
+
+      const result = await listService.updateByListId(1, 1, "test two");
+
+      expect(result).toStrictEqual({ title: "test two" });
+      expect(listRepository.updateByListId).toHaveBeenCalledWith(
+        1,
+        1,
+        "test two"
+      );
+    });
+  });
 });
 
 /*
