@@ -45,7 +45,7 @@ const e2eConfig = {
   displayName: "e2e",
   rootDir: root,
   testMatch: ["<rootDir>/test/e2e/**/*.spec-e2e.js"],
-  globalSetup: "<rootDir>/test/setup/jest.global-setup.js",
+  // globalSetup: "<rootDir>/test/setup/jest.global-setup.js",
   setupFilesAfterEnv: ["<rootDir>/test/setup/jest.setup-e2e.js"],
   collectCoverageFrom: ["<rootDir>/test/e2e/**/*.spec-e2e.js"],
   coverageDirectory: "<rootDir>/coverage/e2e",
