@@ -22,7 +22,7 @@ const create = async (username, email, passwordHashed, avatarUrl) => {
   const values = [username, email, passwordHashed, avatarUrl];
 
   const result = await pool.query(text, values);
-  return result.rows[0];
+  return result;
 };
 
 const updateAvatar = async (url, userId) => {
