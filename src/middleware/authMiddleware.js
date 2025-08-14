@@ -17,11 +17,12 @@ const authenticateToken = (req, res, next) => {
     next();
   } catch (err) {
     if (err.name === "JsonWebTokenError") {
-      console.warn(
-        JSON.stringify({ code: 401, message: err.message }, null, 2),
-        err.stack
-      );
-      res.status(401).json({ message: "JWT invalid" });
+      if (process.env.NODE_ENV !== "test")
+        console.warn(
+          JSON.stringify({ code: 400, message: err.message }, null, 2),
+          err.stack
+        );
+      res.status(400).json({ message: "JWT invalid" });
       return;
     }
     next(err);

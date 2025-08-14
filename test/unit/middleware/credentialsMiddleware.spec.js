@@ -1,3 +1,4 @@
+import BadRequestErrorHttp from "../../../src/errors/BadRequestError.js";
 import { credentialsIsValid } from "../../../src/middleware/credentialsMiddleware.js";
 import {
   isEmailValid,
@@ -18,11 +19,7 @@ describe("credentialsMiddleware", () => {
     next = jest.fn();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("should call next() if all fields are valid", async () => {
+  it("should call next() if all fields are valid", () => {
     req.body = {
       username: "john.doe",
       email: "john.doe@example.com",
@@ -32,52 +29,50 @@ describe("credentialsMiddleware", () => {
     isEmailValid.mockReturnValue(true);
     isPasswordValid.mockReturnValue(true);
 
-    await credentialsIsValid(req, res, next);
+    credentialsIsValid(req, res, next);
 
     expect(next).toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalled();
-    expect(res.json).not.toHaveBeenCalled();
     expect(req.credentials).toEqual({
       username: "john.doe",
       email: "john.doe@example.com",
       password: "Password123!",
     });
   });
-
-  it("should return 400 if email is invalid", async () => {
+  it("should propaate BadRequestErrorHttp if all fields are empty", () => {
+    expect(() => credentialsIsValid(req, res, next)).toThrow(
+      BadRequestErrorHttp
+    );
+    expect(next).not.toHaveBeenCalled();
+  });
+  it("should propagate BadRequestErrorHttp if email is invalid", () => {
     req.body = {
       username: "john.doe",
       email: "invalidEmailexample.com",
       password: "Password123!",
     };
 
-    isEmailValid.mockReturnValue(false);
-    isPasswordValid.mockReturnValue(true);
+    isEmailValid.mockReturnValueOnce(false);
+    // isPasswordValid.mockReturnValueOnce(true);
 
-    await credentialsIsValid(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Invalid email format" });
+    expect(() => credentialsIsValid(req, res, next)).toThrow(
+      BadRequestErrorHttp
+    );
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("should return 400 if password is invalid", async () => {
+  it("should propagate BadRequestErrorHttp if password is invalid", async () => {
     req.body = {
       username: "john.doe",
       email: "john.doe@example.com",
       password: "password123",
     };
 
-    isEmailValid.mockReturnValue(true);
-    isPasswordValid.mockReturnValue(false);
+    isEmailValid.mockReturnValueOnce(true);
+    isPasswordValid.mockReturnValueOnce(false);
 
-    await credentialsIsValid(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      message:
-        "password must contain uppercase letters, lowercase letters, numbers and at least 8 characters",
-    });
+    await expect(() => credentialsIsValid(req, res, next)).toThrow(
+      BadRequestErrorHttp
+    );
     expect(next).not.toHaveBeenCalled();
   });
 });

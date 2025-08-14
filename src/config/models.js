@@ -1,7 +1,7 @@
 import { pool } from "./db.js";
 
 export async function createTables() {
-  console.log("Creating a test database");
+  // console.log("Creating a test database");
   await pool.query(`CREATE TABLE IF NOT EXISTS "users" (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,

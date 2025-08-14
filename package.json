@@ -5,28 +5,12 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "test": "NODE_ENV=test jest --runInBand",
+    "test": "jest --runInBand",
+    "test:unit": "jest --selectProjects unit",
+    "test:e2e": "NODE_ENV=test --runInBand --selectProjects e2e",
     "start:dev": "NODE_ENV=dev nodemon src/server.js",
-    "start": "node src/server.js"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "setupFiles": [
-      "./tests/setupFiles.js"
-    ],
-    "setupFilesAfterEnv": [
-      "./tests/setupAfterEnv.js"
-    ],
-    "globalSetup": "./tests/globalSetup.js",
-    "coverageDirectory": "coverage",
-    "collectCoverage": true,
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "verbose": true,
-    "transform": {
-      "^.+\\.jsx?$": "babel-jest"
-    }
+    "start": "node src/server.js",
+    "test:cov": "jest --coverage"
   },
   "keywords": [],
   "author": "",

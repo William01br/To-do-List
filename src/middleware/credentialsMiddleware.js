@@ -1,7 +1,7 @@
 import BadRequestErrorHttp from "../errors/BadRequestError.js";
 import { isEmailValid, isPasswordValid } from "../utils/credentials.js";
 
-export const credentialsIsValid = async (req, res, next) => {
+export const credentialsIsValid = (req, res, next) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password)

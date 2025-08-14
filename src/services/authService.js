@@ -2,12 +2,12 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
-import { pool } from "../config/db.js";
 import InternalErrorHttp from "../errors/InternalError.js";
 import BadRequestErrorHttp from "../errors/BadRequestError.js";
 import NotFoundErrorHttp from "../errors/NotFoundError.js";
 import authRepository from "../repository/authRepository.js";
 import userRepository from "../repository/userRepository.js";
+import UnauthorizedErrorHttp from "../errors/UnauthorizedError.js";
 dotenv.config();
 
 const generateAccessToken = (userId) =>
@@ -54,17 +54,17 @@ const getTokens = async (userId) => {
 };
 
 const login = async (email, password) => {
-  const user = (await userRepository.getByEmail(email)).rows[0];
-  if (!user)
+  const user = (await userRepository.getByEmail(email)).rows;
+  if (user.length === 0)
     throw new NotFoundErrorHttp({
       message: "E-mail not found",
     });
 
-  const passwordMatch = await bcrypt.compare(password, user.password);
+  const passwordMatch = await bcrypt.compare(password, user[0].password);
   if (!passwordMatch)
     throw new UnauthorizedErrorHttp({ message: "Invalid credentials" });
 
-  return user.id;
+  return user[0].id;
 };
 
 // Receive a refresh token and creates a new acess token.
@@ -74,14 +74,17 @@ const getAccessToken = async (refreshToken, userId) => {
    * TEM QUE REVER ISSO.
    */
   const storedToken = (await authRepository.findRefreshTokenByUserId(userId))
-    .rows[0];
-  if (!storedToken)
+    .rows;
+  if (storedToken.length === 0)
     throw new NotFoundErrorHttp({
       message: "Refresh token not found",
       context: "Token Alredy revoked or expired",
     });
 
-  const isMatch = await bcrypt.compare(refreshToken, storedToken.refresh_token);
+  const isMatch = await bcrypt.compare(
+    refreshToken,
+    storedToken[0].refresh_token
+  );
   if (!isMatch)
     throw new BadRequestErrorHttp({
       message: "Refresh token provided is invalid",
@@ -100,4 +103,5 @@ export default {
   getTokens,
   deleteRefreshToken,
   generateAccessToken,
+  generateRefreshToken,
 };

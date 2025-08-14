@@ -8,7 +8,7 @@ export const validateId = (...ids) => {
     if (!regex.test(id))
       throw new BadRequestErrorHttp({
         message: "Invalid Id",
-        context: "Allow only valid numbers betwen 1 and 999999999 (9 digits)",
+        context: "Allow only valid numbers between 1 and 999999999 (9 digits)",
       });
   });
 };

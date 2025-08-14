@@ -10,9 +10,10 @@ import NotFoundErrorHttp from "../errors/NotFoundError.js";
 import BadRequestErrorHttp from "../errors/BadRequestError.js";
 import userRepository from "../repository/userRepository.js";
 import listRepository from "../repository/listRepository.js";
+import { createMessageEmail } from "../utils/createMessageEmail.js";
 
 const register = async (username, email, password) => {
-  if (!(await userRepository.emailExists(email)).rows[0].email)
+  if ((await userRepository.emailExists(email)).rows[0]?.email)
     throw new ConflictErrorHttp({
       message: "The email address is already registered",
     });
@@ -81,18 +82,15 @@ const uploadToCloudinary = async (fileData) => {
 
 const updateAvatar = async (url, userId) => {
   const result = await userRepository.updateAvatar(url, userId);
-  // se chegou aqui é porque tá autenticado
-  // então é erro interno
   if (result.rowCount === 0)
     throw new InternalErrorHttp({
       message: "Avatar was not updated",
       context: "Reason unknown",
     });
-  // devia retornar a url, não?
 };
 
 const sendEmailToResetPassword = async (emailProvided) => {
-  if (!(await userRepository.emailExists(emailProvided)).rows[0].email)
+  if ((await userRepository.emailExists(emailProvided)).rows[0]?.email)
     throw new NotFoundErrorHttp({
       message: "E-mail not found",
     });
@@ -124,23 +122,11 @@ const sendEmailToResetPassword = async (emailProvided) => {
   await transporter.sendMail(mailOptions);
 };
 
-const createMessageEmail = (userEmail, resetUrl) => {
-  return {
-    to: userEmail,
-    from: process.env.EMAIL_USER,
-    subject: "Password Reset",
-    text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
-      Please click on the following link, or paste this into your browser to complete the process:\n\n
-      ${resetUrl}\n\n
-      If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-  };
-};
-
 const resetPassword = async (newPassword, resetToken) => {
   const dateNow = new Date(Date.now());
   if (
     !(await userRepository.verifyExpirationToken(resetToken, dateNow)).rows[0]
-      .reset_password_token
+      ?.reset_password_token
   )
     throw new BadRequestErrorHttp({
       message: "Reset token was expired",
@@ -162,13 +148,13 @@ const resetPassword = async (newPassword, resetToken) => {
 };
 
 const getAllDataUserByUserId = async (userId) => {
-  const result = await userRepository.getAllByUserId(userId);
-  if (result.rows.length === 0)
+  const result = (await userRepository.getAllByUserId(userId)).rows;
+  if (result.length === 0)
     throw new BadRequestErrorHttp({
       message: "User not found",
     });
 
-  return result.rows[0];
+  return result[0];
 };
 
 const deleteAccount = async (userId) => {

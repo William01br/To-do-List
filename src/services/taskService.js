@@ -56,7 +56,7 @@ const getTaskByTaskId = async (listId, taskId, userId) => {
       message: "Task not found",
     });
 
-  return result.rows;
+  return result.rows[0];
 };
 
 const updateTaskByTaskId = async (

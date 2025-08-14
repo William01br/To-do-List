@@ -9,9 +9,8 @@ const getCountListsByUserId = async (userId) => {
 
 const createListDefault = async (userId) => {
   const result = await listRepository.createList("Default list", userId, true);
-  if (result.rowCount === 0) return null;
-
-  return true;
+  if (result.rowCount === 0)
+    throw new InternalErrorHttp({ message: "List default is not created" });
 };
 
 const createList = async (listName, userId) => {
@@ -50,7 +49,6 @@ const updateByListId = async (listId, userId, nameList) => {
   if (result.rowCount === 0)
     throw new NotFoundErrorHttp({ message: "List not found" });
 
-  // should return the list??
   return result.rows[0];
 };
 
